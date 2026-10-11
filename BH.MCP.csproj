@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The MCP server a client launches over stdio: a thin forwarder to the running game's bridge. It
+    compiles the SDK's pure Agent/ folder (through the ProjectReference) and nothing of Unity.
+
+    net8 because ModelContextProtocol targets modern .NET; the SDK stays netstandard2.1 for Unity.
+
+    TRIMMING. The shipped binary is published trimmed (below). Tool classes are therefore registered
+    one by one in Program.cs with WithTools<T>(): WithToolsFromAssembly() finds nothing in a trimmed
+    binary. Every tool class must be NON-static for that.
+
+    Nullable/ImplicitUsings are off like the SDK; Tests\ is its own project.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Bullet Hero MCP</AssemblyName>
+    <Product>Bullet Hero MCP</Product>
+    <AssemblyTitle>Bullet Hero MCP</AssemblyTitle>
+    <ApplicationIcon>Icon\icon.ico</ApplicationIcon>
+    <RootNamespace>BH.MCP</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <!-- Tests\ is its own project and BH.SDK\ is the submodule: neither compiles into the server. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Tests\**;BH.SDK\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <!--
+    The shipped shape, applied whenever a runtime identifier is given (`dotnet publish -r <rid>`). It is
+    set HERE and not passed as -p:PublishTrimmed on the command line: a command-line property is global
+    and would reach BH.SDK and BH.SDK.Roslyn through the ProjectReference, and a netstandard library
+    cannot be trimmed (NETSDK1124).
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+  </PropertyGroup>
+
+  <!--
+    WHICH SDK. Standalone, the BH.SDK submodule beside this file. Inside a host repository (the game),
+    the host decides: a BH.MCP.host.props in any folder ABOVE this repository sets BhSdkDir to the
+    host's own SDK, so the server always compiles against the protocol the host ships. The search
+    starts at the parent folder, so this repository can never point at itself.
+  -->
+  <PropertyGroup>
+    <BhHostProps>$([MSBuild]::GetPathOfFileAbove('BH.MCP.host.props', '$(MSBuildThisFileDirectory)..'))</BhHostProps>
+  </PropertyGroup>
+  <Import Project="$(BhHostProps)" Condition="'$(BhHostProps)' != ''" />
+  <PropertyGroup>
+    <BhSdkDir Condition="'$(BhSdkDir)' == ''">$(MSBuildThisFileDirectory)BH.SDK\</BhSdkDir>
+    <BhSdkProject>$([System.IO.Path]::GetFullPath('$(BhSdkDir)BH.SDK.csproj'))</BhSdkProject>
+  </PropertyGroup>
+
+  <Target Name="BhCheckSdk" BeforeTargets="Restore;CollectPackageReferences;ResolveProjectReferences">
+    <Error Condition="!Exists('$(BhSdkProject)')"
+           Text="BH.SDK not found at $(BhSdkProject). Run: git submodule update --init BH.SDK" />
+    <Message Importance="high" Text="BH.MCP compiles against $(BhSdkProject)" />
+  </Target>
+
+  <!-- Icon\icon.png is the source; icon.ico is made from it, icon-64.png is the MCP serverInfo icon. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Icon\icon-64.png" LogicalName="icon-64.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(BhSdkProject)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+  </ItemGroup>
+
+</Project>

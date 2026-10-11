@@ -1,0 +1,9 @@
+# Build output (dotnet build, dotnet publish -o bin/publish/<rid>).
+bin/
+obj/
+
+# IDE state.
+.idea/
+.vs/
+*.user
+*.DotSettings.user

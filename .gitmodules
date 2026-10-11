@@ -1,0 +1,3 @@
+[submodule "BH.SDK"]
+	path = BH.SDK
+	url = https://github.com/bullet-hero/sdk.git

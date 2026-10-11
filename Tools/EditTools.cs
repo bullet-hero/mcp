@@ -1,0 +1,89 @@
+using System.ComponentModel;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using BH.SDK.Agent;
+using BH.SDK.Agent.Messages;
+using ModelContextProtocol.Protocol;
+using ModelContextProtocol.Server;
+
+namespace BH.MCP.Tools
+{
+    // NON-static on purpose: WithTools<T>() needs an instance type to survive trimming.
+
+    /// <summary> The one write tool. </summary>
+    [McpServerToolType]
+    public sealed class EditTools
+    {
+        private readonly BridgeClient _bridge;
+
+        public EditTools(BridgeClient bridge) => _bridge = bridge;
+
+        [McpServerTool(Name = "edit_batch", Destructive = false)]
+        [Description("The ONLY way to change the level. Runs ops in order as ONE undo step for the author, all or "
+                     + "nothing: a failing op rolls everything back and the error names its index. Up to 512 ops; "
+                     + "batch one coherent change and caption it. Pass expectedRevision from your last read; on "
+                     + "stale re-read (changes_since shows what happened). Times: global frame from 1 (120, "
+                     + "\"f:120\") or \"s:12.5\"; with a beat grid also \"bar:17\", \"bar:17.3\", \"beat:64.5\", "
+                     + "\"marker:drop+2bars\"; durations 60, \"f:60\", \"s:2\", \"2bars\", \"3beats\". Layers are "
+                     + "EFFECTIVE (own plus "
+                     + "parents'). Ids are ints; \"$a\" names an object an earlier create declared with ref, usable "
+                     + "as id or parent below it.\n"
+                     + "ops (every op has op plus):\n"
+                     + "create: type rect|shape|text|effect|prefab, ref \"$a\", start, [parent], [name], [layer], "
+                     + "[duration], [shape: catalog name or id, see shapes_find], [prefab: template guid]\n"
+                     + "delete: ids [..] (subtrees go too)\n"
+                     + "name: id, value\n"
+                     + "parent: id, parent (null = root); put it before layer\n"
+                     + "layer: id, value\n"
+                     + "span: id, [start], [duration], [anchorStart], [anchorEnd] (bool: follow the parent's edge)\n"
+                     + "active: id, value (bool)\n"
+                     + "shape: id, [shape], [shader auto|opaque|transparent] (shape objects)\n"
+                     + "text: id, value (text objects)\n"
+                     + "key: id, track, frame (global), value, [ease], [space local|world]; adds the key or "
+                     + "overwrites the one there. space world (position only, literal Vector2Value) takes the "
+                     + "pivot in world units, as cursor_resolve reports it, and converts it for a child\n"
+                     + "unkey: id, track, frame\n"
+                     + "meta: field name|description|tags|authors, value\n"
+                     + "levelkey: owner, track, frame, value, [ease] / levelunkey: owner, track, frame. camera: "
+                     + "position rotation zoom pivot shake; game: marker {name,description,color4} checkpoint "
+                     + "{name,active,color4,position,space,restoreHealth} screenLimit background theme; player: "
+                     + "visible control collision size speed; post: bloom chromatic vignette lens grain "
+                     + "motionBlur colorCurves liftGammaGain shadowsMidtonesHighlights whiteBalance "
+                     + "analogGlitch digitalGlitch\n"
+                     + "audiotrack: ref \"$t\", start, [name, duration, layer 0-15, resource, offset (s), speed, "
+                     + "volume]; audioset: id, same optional fields; audiodelete: ids; audiokey: id, track "
+                     + "volume|stereoPan, frame, value, [ease]; audiounkey: id, track, frame\n"
+                     + "setting: field framerate|duration (frames)|seed|orientation, value (framerate keeps "
+                     + "frame numbers, so everything retimes)\n"
+                     + "prefab_pack: ref, ids, [name] (ids become a template plus one placement); "
+                     + "prefab_flatten: ids, [recursive]\n"
+                     + "In Prefab Mode the template root is id -3 and level-wide verbs are refused.\n"
+                     + "tracks: position, rotation, scale, size, anchorMin, anchorMax, pivot, color, uv, "
+                     + "textFontSize, textAppearing, textFillment; rotation is in RADIANS. Values are readable "
+                     + "JSON with a kind, e.g. "
+                     + "{\"kind\":\"Vector2Value\",\"x\":3,\"y\":4}; colors \"#RRGGBBAA\" or {\"theme\":2}; copy "
+                     + "the shape of a track's value from keys_get. ease is an EaseType name (Linear, Constant, "
+                     + "InSine, OutQuad, ...). A new drawable object has no size: key size, or it shows nothing.\n"
+                     + "Example: {\"expectedRevision\":41,\"caption\":\"Ring\",\"ops\":[{\"op\":\"create\","
+                     + "\"ref\":\"$a\",\"type\":\"shape\",\"start\":\"s:2\",\"duration\":\"s:1\",\"name\":\"ring\","
+                     + "\"shape\":\"RingHalfThin\"},{\"op\":\"key\",\"id\":\"$a\",\"track\":\"size\","
+                     + "\"frame\":\"s:2\",\"value\":{\"kind\":\"Vector2Value\",\"x\":4,\"y\":4}}]}\n"
+                     + "Result: revision, created (ref to id; createdAudio, createdPrefabs for those refs), "
+                     + "warnings (clamps and legal oddities), hints. "
+                     + "Refusals: stale, user_busy, locked, refused (op index and reason), "
+                     + "invalid_params.")]
+        public Task<CallToolResult> EditBatch(
+            [Description("Revision from your last read; a mismatch is stale.")] int expectedRevision,
+            [Description("What the author's History tab shows for this step, e.g. \"Chorus 1: ring bursts\".")]
+            string caption,
+            [Description("The ops array, as described by the tool.")] JsonElement ops,
+            CancellationToken token = default)
+            => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.EditBatch, new EditBatchRequest
+            {
+                ExpectedRevision = expectedRevision,
+                Caption = caption,
+                Ops = BridgeTool.Objects(ops),
+            }, token);
+    }
+}
