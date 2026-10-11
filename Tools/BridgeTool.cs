@@ -34,6 +34,10 @@ namespace BH.MCP.Tools
             }
         }
 
+        /// <summary> An error result in the shape a refusal from the game takes. </summary>
+        public static CallToolResult Error(string code, string message)
+            => Refusal(new BridgeException(code, message));
+
         private static CallToolResult Refusal(BridgeException e)
         {
             var error = new JObject
@@ -134,7 +138,7 @@ namespace BH.MCP.Tools
             return list;
         }
 
-        private static CallToolResult Text(string text, bool isError) => new CallToolResult
+        internal static CallToolResult Text(string text, bool isError) => new CallToolResult
         {
             IsError = isError,
             Content = { new TextContentBlock { Text = text } },

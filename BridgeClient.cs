@@ -48,6 +48,25 @@ namespace BH.MCP
 
         public BridgeClient(string endpointPath) => _endpointPath = endpointPath;
 
+        /// <summary> The endpoint file this client reads on every connect. </summary>
+        public string EndpointPath => _endpointPath;
+
+        /// <summary> Drops the open connection, so the next call connects to whatever game listens now.
+        /// </summary>
+        public async Task DisconnectAsync()
+        {
+            await _gate.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                Close();
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+
         /// <summary> Calls <paramref name="method"/> and returns its result object. </summary>
         /// <exception cref="BridgeException"> The game refused, or could not be reached. </exception>
         public async Task<JToken> CallAsync(string method, object parameters, CancellationToken token)

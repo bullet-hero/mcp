@@ -15,8 +15,10 @@ using ModelContextProtocol.Protocol;
 var builder = Host.CreateApplicationBuilder(args);
 builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 
-var endpoint = EndpointArgument(args) ?? AgentEndpoint.DefaultPath();
-builder.Services.AddSingleton(new BridgeClient(endpoint));
+var endpoint = Argument(args, "--endpoint") ?? AgentEndpoint.DefaultPath();
+var bridge = new BridgeClient(endpoint);
+builder.Services.AddSingleton(bridge);
+builder.Services.AddSingleton(new GameLauncher(bridge, Argument(args, "--game-exe")));
 
 // Parameter types are resolved from source-generated metadata: a trimmed binary has no reflection JSON.
 var toolJson = new JsonSerializerOptions(McpJsonUtilities.DefaultOptions);
@@ -31,7 +33,7 @@ builder.Services
             Name = "bullet-hero",
             Title = "Bullet Hero MCP",
             Version = ServerVersion(),
-            Description = $"Bullet Hero level editor bridge, protocol {AgentProtocol.Version}, BH.SDK {SdkVersion.Value}",
+            Description = $"Bullet Hero game and level editor bridge, protocol {AgentProtocol.Version}, BH.SDK {SdkVersion.Value}",
             WebsiteUrl = "https://bullethero.space/",
             Icons = [new Icon { Source = IconDataUri(), MimeType = "image/png", Sizes = ["64x64"] }],
         };
@@ -39,6 +41,7 @@ builder.Services
     })
     .WithStdioServerTransport()
     .WithTools<SessionTools>(toolJson)
+    .WithTools<AppTools>(toolJson)
     .WithTools<LevelTools>(toolJson)
     .WithTools<ReadTools>(toolJson)
     .WithTools<EditTools>(toolJson)
@@ -70,10 +73,10 @@ static string IconDataUri()
     return "data:image/png;base64," + System.Convert.ToBase64String(memory.ToArray());
 }
 
-static string EndpointArgument(string[] args)
+static string Argument(string[] args, string name)
 {
     for (var i = 0; i < args.Length - 1; i++)
-        if (args[i] == "--endpoint") return args[i + 1];
+        if (args[i] == name) return args[i + 1];
 
     return null;
 }

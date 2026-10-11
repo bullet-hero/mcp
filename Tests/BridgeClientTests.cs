@@ -203,7 +203,7 @@ namespace BH.MCP.Tests
         public void TheText_FitsWhatAClientKeeps()
         {
             Assert.Less(ServerInstructions.Text.Length, ServerInstructions.MaxLength);
-            StringAssert.StartsWith("You are editing a Bullet Hero level", ServerInstructions.Text);
+            StringAssert.StartsWith("You work in the Bullet Hero game", ServerInstructions.Text);
             StringAssert.EndsWith("generators, design.", ServerInstructions.Text);
             Assert.IsFalse(ServerInstructions.Text.Contains('\r'));
         }

@@ -40,8 +40,11 @@ namespace BH.MCP.Tests
             typeof(SessionTools), typeof(LevelTools), typeof(ReadTools), typeof(EditTools), typeof(HistoryTools),
             typeof(SelectionTools), typeof(PrefabTools), typeof(GeneratorTools), typeof(MaintenanceTools),
             typeof(VisionTools), typeof(CaptureTools), typeof(MusicTools),
-            typeof(ContextTools),
+            typeof(ContextTools), typeof(AppTools),
         };
+
+        // Tools the server answers itself, with no bridge method behind them.
+        private static readonly string[] ServerOnlyTools = { "app_launch" };
 
         private static JsonElement Json(string text) => JsonDocument.Parse(text).RootElement.Clone();
 
@@ -52,6 +55,8 @@ namespace BH.MCP.Tests
         {
             yield return Row("session_status", AgentProtocol.Methods.SessionStatus, null,
                 t => t.Session.SessionStatus(default));
+            yield return Row("app_navigate", AgentProtocol.Methods.AppNavigate, "{\"args\":\"--editor\"}",
+                t => t.App.AppNavigate("--editor", default));
             yield return Row("level_list", AgentProtocol.Methods.LevelList, "{\"filter\":\"zero\",\"offset\":5,\"limit\":9}",
                 t => t.Level.LevelList("zero", 5, 9));
             yield return Row("level_open", AgentProtocol.Methods.LevelOpen, "{\"id\":\"abc\"}",
@@ -197,9 +202,11 @@ namespace BH.MCP.Tests
             public readonly CaptureTools Capture;
             public readonly MusicTools Music;
             public readonly ContextTools Context;
+            public readonly AppTools App;
 
             public Tools(BridgeClient client)
             {
+                App = new AppTools(client, new GameLauncher(client, null));
                 Prefab = new PrefabTools(client);
                 Generator = new GeneratorTools(client);
                 Maintenance = new MaintenanceTools(client);
@@ -256,13 +263,12 @@ namespace BH.MCP.Tests
                 .Select(f => (string)f.GetRawConstantValue())
                 .Where(m => m != AgentProtocol.Methods.Hello)
                 .Select(AgentProtocol.ToolName)
-                .OrderBy(n => n)
                 .ToArray();
 
             var tools = ToolMethods().Select(m => m.GetCustomAttribute<McpServerToolAttribute>().Name)
                 .OrderBy(n => n).ToArray();
 
-            Assert.AreEqual(methods, tools);
+            Assert.AreEqual(methods.Concat(ServerOnlyTools).OrderBy(n => n).ToArray(), tools);
             Assert.AreEqual(methods.Length, Calls().Count());
         }
 

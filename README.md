@@ -88,7 +88,8 @@ Any MCP client that launches a stdio server takes the same shape:
 
 `--endpoint` is optional: without it the server looks in the game's default data folder for this
 machine (`AgentEndpoint.DefaultPath`). The game's Settings screen has a Copy client config button that
-fills both paths in.
+fills both paths in. `--game-exe <path>` is optional too: it names the game `app_launch` starts, which
+otherwise is the installed game beside the server (none for a server in `bin/`).
 
 ## Tools
 
@@ -97,6 +98,8 @@ Class per area under `Tools/`; the name is the bridge method with `_` for `.`.
 | Class | Tool | Does |
 |---|---|---|
 | `SessionTools` | `session_status` | connection, screen, open level, revision, author busy, AI rights |
+| `AppTools` | `app_navigate` | move the running game to a screen with a launch-argument line |
+| | `app_launch` | start the game when it is not running (server-side, no bridge method) |
 | `LevelTools` | `level_list` | levels in the editor's list (paged) |
 | | `level_open` | open a writable level by id |
 | | `level_create` | new empty level (name, framerate, duration) |
