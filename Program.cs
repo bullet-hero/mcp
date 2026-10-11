@@ -6,6 +6,7 @@ using BH.MCP.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 using System.Text.Json;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
@@ -29,7 +30,8 @@ builder.Services
         {
             Name = "bullet-hero",
             Title = "Bullet Hero MCP",
-            Version = SdkVersion.Value,
+            Version = ServerVersion(),
+            Description = $"Bullet Hero level editor bridge, protocol {AgentProtocol.Version}, BH.SDK {SdkVersion.Value}",
             WebsiteUrl = "https://bullethero.space/",
             Icons = [new Icon { Source = IconDataUri(), MimeType = "image/png", Sizes = ["64x64"] }],
         };
@@ -52,6 +54,12 @@ builder.Services
     .WithPrompts<WorkflowPrompts>(toolJson);
 
 await builder.Build().RunAsync();
+
+// The server's own version: <Version> in BH.MCP.csproj, the one copy the release workflow checks.
+static string ServerVersion()
+    => typeof(BridgeClient).Assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+       ?? "0.0.0";
 
 // The icon travels inline: a client may show it with no file or network access.
 static string IconDataUri()

@@ -57,6 +57,21 @@ the ProjectReference, and fails there (NETSDK1124). Other runtime identifiers (`
 (`Bullet Hero MCP` off Windows). A game build publishes the server itself, with the same command, and
 puts the binary beside the game's executable.
 
+## Versions and releases
+
+Three numbers, each with one owner:
+
+| Number | Owner | Means |
+|---|---|---|
+| `pv`, the protocol version as released (e.g. 1.2.0) | `<Version>` in `BH.MCP.csproj` | this program and the protocol it speaks; `serverInfo.version`, the binary's file version, the release tag |
+| the wire number (`AgentProtocol.Version`, an integer) | the SDK's `Agent/` | compatibility only: the game refuses a `hello` whose number differs from its own. Not raised before the first release (pv 1.3.0); after it, every breaking wire change raises it |
+| the SDK (`sv`, `SdkVersion.Value`) | the SDK | the library compiled in; shown in `serverInfo.description` beside the protocol |
+
+A release is a tag `pv<X.Y.Z>` equal to `<Version>`, on a commit whose `CHANGELOG.md` has a
+`## pv X.Y.Z` section. `.github/workflows/release.yml` then tests, publishes every runtime identifier
+on its own OS (`bullet-hero-mcp-<version>-<rid>.zip` / `.tar.gz`) and creates the GitHub Release. Run
+it by hand from the Actions tab to build everything without releasing: the archives stay on the run.
+
 ## Icon
 
 `Icon/icon.png` is the source. `Icon/icon.ico` is made from it (sizes 16 to 256) and is the Windows

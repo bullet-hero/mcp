@@ -16,6 +16,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <!-- The server's own version, its ONE copy: the release workflow checks the pv<X.Y.Z> tag against it. -->
+    <Version>1.2.0</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <AssemblyName>Bullet Hero MCP</AssemblyName>
     <Product>Bullet Hero MCP</Product>
     <AssemblyTitle>Bullet Hero MCP</AssemblyTitle>

@@ -1,0 +1,144 @@
+# Publishes the server's binaries as a GitHub Release when a pv<X.Y.Z> tag is pushed, or builds them
+# without releasing anything by hand from the Actions tab (workflow_dispatch).
+#
+# The version is not an input. <Version> in BH.MCP.csproj is its one copy, and when a tag started the
+# run the tag must say the same thing, or the job fails before anything is built.
+#
+# EACH BINARY IS BUILT ON ITS OWN OS. A Linux or macOS binary published on Windows carries no
+# executable bit, so every runtime identifier is published on a runner of its own kind and packed
+# there: .zip for Windows, .tar.gz (which keeps the bit) for Linux and macOS. macOS signing and
+# notarisation are not done yet.
+#
+# The SDK comes from the BH.SDK submodule at the commit this repository pins (there is no host
+# BH.MCP.host.props on a runner), so a release speaks the protocol of that SDK commit. The game builds
+# its own copy of the server from source and does not use these binaries.
+#
+# A TAG RUN IS THE WHOLE RELEASE: the tag's own `## pv X.Y.Z` section of CHANGELOG.md becomes the
+# release body. That section is read BEFORE anything is built, so a tag on a commit without one fails
+# with nothing published. A manual run creates no release; its binaries stay on the run as artifacts.
+
+name: release
+
+on:
+  push:
+    tags: [ 'pv*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: The tag matches the version
+        id: version
+        run: |
+          version=$(grep -oP '^\s*<Version>\K[^<]+(?=</Version>)' BH.MCP.csproj)
+          echo "BH.MCP.csproj=$version ref=$GITHUB_REF_TYPE/$GITHUB_REF_NAME"
+          [ -n "$version" ] || { echo "::error::BH.MCP.csproj has no <Version>"; exit 1; }
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "${GITHUB_REF_NAME#pv}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version"; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Release notes from CHANGELOG.md
+        if: github.ref_type == 'tag'
+        run: |
+          heading="## pv ${{ steps.version.outputs.version }}"
+          [ -f CHANGELOG.md ] || { echo "::error::No CHANGELOG.md - write the '$heading' section before tagging"; exit 1; }
+          awk -v h="$heading" '
+            index($0, h) == 1 && (length($0) == length(h) || substr($0, length(h) + 1, 1) == " ") { f = 1; next }
+            f && /^## / { exit }
+            f
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md" \
+            || { echo "::error::CHANGELOG.md has no '$heading' section - write it before tagging"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        if: github.ref_type == 'tag'
+        with:
+          name: notes
+          path: ${{ runner.temp }}/notes.md
+
+      - name: Test
+        run: dotnet test Tests/BH.MCP.Tests.csproj -c Release --filter "TestCategory!=5_extreme"
+
+  build:
+    needs: check
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { rid: win-x64, os: windows-latest }
+          - { rid: linux-x64, os: ubuntu-latest }
+          - { rid: osx-arm64, os: macos-latest }
+          - { rid: osx-x64, os: macos-latest }
+    runs-on: ${{ matrix.os }}
+    env:
+      ASSET: bullet-hero-mcp-${{ needs.check.outputs.version }}-${{ matrix.rid }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # No -p: flags: BH.MCP.csproj sets the shipped shape whenever -r is given (NETSDK1124 otherwise).
+      - name: Publish
+        shell: bash
+        run: dotnet publish BH.MCP.csproj -c Release -r ${{ matrix.rid }} -o publish
+
+      - name: Pack (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path "publish/Bullet Hero MCP.exe", LICENSE -DestinationPath "$($env:ASSET).zip"
+
+      - name: Pack (Linux, macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          chmod +x "publish/Bullet Hero MCP"
+          cp LICENSE publish/
+          tar -czf "$ASSET.tar.gz" -C publish "Bullet Hero MCP" LICENSE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ASSET }}
+          path: ${{ env.ASSET }}.*
+          if-no-files-found: error
+
+  release:
+    needs: [ check, build ]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the GitHub Release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Skipped when the release already exists, so a re-run after a failure further down is safe.
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists"; exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" artifacts/bullet-hero-mcp-*/* \
+            --title "pv ${{ needs.check.outputs.version }}" --notes-file artifacts/notes/notes.md --verify-tag
