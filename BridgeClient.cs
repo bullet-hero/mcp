@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using BH.SDK.Agent;
 using BH.SDK.Agent.Messages;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -45,6 +47,10 @@ namespace BH.MCP
 
         /// <summary> What the AI has already been told, so a hint is not repeated every call. </summary>
         public HintFilter Hints { get; } = new HintFilter();
+
+        /// <summary> Where every tool call leaves its one line (<c>BridgeTool</c>); silent until the host
+        /// sets it. </summary>
+        public ILogger Log { get; set; } = NullLogger.Instance;
 
         public BridgeClient(string endpointPath) => _endpointPath = endpointPath;
 

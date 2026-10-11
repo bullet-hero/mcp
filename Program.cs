@@ -6,16 +6,34 @@ using BH.MCP.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Reflection;
 using System.Text.Json;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 
-// stdout belongs to the MCP transport: every log line goes to stderr.
-var builder = Host.CreateApplicationBuilder(args);
-builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
-
 var endpoint = Argument(args, "--endpoint") ?? AgentEndpoint.DefaultPath();
+
+// A client always pipes stdin; a console that did not (a double click) gets the log viewer instead of
+// a server waiting for JSON on the keyboard. --stdio forces the server, --logs the viewer.
+if (HasFlag(args, "--logs") || (!Console.IsInputRedirected && !HasFlag(args, "--stdio")))
+    return LogViewer.Run(endpoint, ServerVersion());
+
+var logLevel = Enum.TryParse<LogLevel>(Argument(args, "--log-level"), true, out var parsed)
+    ? parsed
+    : LogLevel.Information;
+
+// stdout belongs to the MCP transport: every log line goes to stderr, and to the shared log file.
+var builder = Host.CreateApplicationBuilder(args);
+builder.Logging.SetMinimumLevel(logLevel);
+
+// The SDK and the host log every request twice over at Information; the server's own line says it once.
+var frameworkLevel = logLevel <= LogLevel.Debug ? logLevel : LogLevel.Warning;
+builder.Logging.AddFilter("ModelContextProtocol", frameworkLevel);
+builder.Logging.AddFilter("Microsoft", frameworkLevel);
+builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
+builder.Logging.AddProvider(new FileLoggerProvider(ServerLog.PathFor(endpoint), logLevel));
+
 var bridge = new BridgeClient(endpoint);
 builder.Services.AddSingleton(bridge);
 builder.Services.AddSingleton(new GameLauncher(bridge, Argument(args, "--game-exe")));
@@ -56,7 +74,13 @@ builder.Services
     .WithTools<ContextTools>(toolJson)
     .WithPrompts<WorkflowPrompts>(toolJson);
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+bridge.Log = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BH.MCP.Calls");
+bridge.Log.LogInformation("Server {Version} started (pid {Pid}), endpoint {Endpoint}", ServerVersion(),
+    Environment.ProcessId, endpoint);
+
+await app.RunAsync();
+return 0;
 
 // The server's own version: <Version> in BH.MCP.csproj, the one copy the release workflow checks.
 static string ServerVersion()
@@ -80,3 +104,5 @@ static string Argument(string[] args, string name)
 
     return null;
 }
+
+static bool HasFlag(string[] args, string name) => Array.IndexOf(args, name) >= 0;

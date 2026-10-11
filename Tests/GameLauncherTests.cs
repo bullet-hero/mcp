@@ -41,7 +41,7 @@ namespace BH.MCP.Tests
         [Category(Metadata.Category.Hard)]
         public void Windows_TheExeWithAData_Folder_IsTheGame()
         {
-            var own = File("Bullet Hero MCP.exe");
+            var own = File("mcp.exe");
             var game = File("Bullet Hero.exe");
             File("UnityCrashHandler64.exe");
             Folder("Bullet Hero_Data");
@@ -55,7 +55,7 @@ namespace BH.MCP.Tests
         [Category(Metadata.Category.Hard)]
         public void Windows_NoDataFolder_OrTwoCandidates_IsNoGame()
         {
-            var own = File("Bullet Hero MCP.exe");
+            var own = File("mcp.exe");
             File("Bullet Hero.exe");
             Assert.IsNull(GameLauncher.Locate(_directory, own, null, OSPlatform.Windows), "no _Data folder");
 
@@ -71,7 +71,7 @@ namespace BH.MCP.Tests
         [Category(Metadata.Category.Hard)]
         public void Linux_TheX86_64Player_IsTheGame()
         {
-            var own = File("Bullet Hero MCP");
+            var own = File("mcp");
             var game = File("Bullet Hero.x86_64");
             File("UnityPlayer.so");
             Folder("Bullet Hero_Data");
@@ -89,7 +89,7 @@ namespace BH.MCP.Tests
             Directory.CreateDirectory(server);
 
             Assert.AreEqual(Path.Combine(_directory, "Bullet Hero.app"),
-                GameLauncher.Locate(server, Path.Combine(server, "Bullet Hero MCP"), null, OSPlatform.OSX));
+                GameLauncher.Locate(server, Path.Combine(server, "mcp"), null, OSPlatform.OSX));
             Assert.IsNull(GameLauncher.Locate(_directory, null, null, OSPlatform.OSX), "not inside a bundle");
         }
 
@@ -99,7 +99,7 @@ namespace BH.MCP.Tests
         [Category(Metadata.Category.Hard)]
         public void AnOverride_WinsWhenItExists()
         {
-            var own = File("Bullet Hero MCP.exe");
+            var own = File("mcp.exe");
             File("Bullet Hero.exe");
             Folder("Bullet Hero_Data");
             var elsewhere = File(Path.Combine("elsewhere", "Game.exe"));

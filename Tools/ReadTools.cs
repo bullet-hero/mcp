@@ -26,7 +26,7 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "level_outline", ReadOnly = true)]
         [Description("The object hierarchy, one indented line per object: "
-                     + "#12 Shape \"boss-ring\" L5(+2) f120+60 shape:RingHalfThin kids:3 "
+                     + "#12 Shape \"boss-ring\" L5(+2) f120+60 shape:Circle_S2_T2 kids:3 "
                      + "(#id, type, name, L = EFFECTIVE layer with (+n) own layer when different, f = global "
                      + "start frame + duration in frames, kids = children). " + PageDoc
                      + "Start with depth 1-2, then descend with parent.")]
@@ -121,10 +121,11 @@ namespace BH.MCP.Tools
                      + "fragment; one line each with the name edit_batch create/shape accepts, and the id. "
                      + PageDoc + "With no filter it lists them all, paged.")]
         public Task<CallToolResult> ShapesFind(
-            [Description("Geometric form as the catalog names it, e.g. Ring.")] string form = null,
+            [Description("Geometric form as the catalog names it, e.g. Circle, Square, Hexagon.")] string form = null,
             [Description("Sector as the catalog names it, e.g. Half.")] string sector = null,
-            [Description("Thickness as the catalog names it, e.g. Thin.")] string thickness = null,
-            [Description("Name fragment, case-insensitive.")] string name = null,
+            [Description("Thickness: filled, ring, or a ring width T2, T4, T8, T16, T32.")] string thickness = null,
+            [Description("Fragment of the name (Circle_S2_T4) or of its description (\"ring 1/4\"), case-insensitive.")]
+            string name = null,
             [Description("Lines to skip.")] int? offset = null,
             [Description("Lines to return, default 100, max 500.")] int? limit = null,
             CancellationToken token = default)

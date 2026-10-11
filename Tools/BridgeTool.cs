@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using BH.SDK.Agent;
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -22,17 +25,58 @@ namespace BH.MCP.Tools
             CancellationToken token)
         {
             bridge.Hints.BeginCall();
+            var started = Stopwatch.GetTimestamp();
+            LogParams(bridge, method, parameters);
 
             try
             {
                 var result = await bridge.CallAsync(method, parameters, token).ConfigureAwait(false);
+                LogCall(bridge, method, started, null, null);
                 return Text(Shape(result, bridge.Hints), false);
             }
             catch (BridgeException e)
             {
+                LogCall(bridge, method, started, e.Code, e.Message);
                 return Refusal(e);
             }
         }
+
+        /// <summary> The line every call leaves: <c>edit_batch 12 ms ok</c>, or the refusal's code and
+        /// message. A refusal the AI is meant to handle (stale, busy) is information, a failure a warning.
+        /// </summary>
+        public static string CallLine(string method, double milliseconds, string code, string message)
+        {
+            var line = new StringBuilder();
+            line.Append(ToolName(method)).Append(' ')
+                .Append(Math.Round(milliseconds).ToString(CultureInfo.InvariantCulture)).Append(" ms ")
+                .Append(code ?? "ok");
+
+            if (code != null && !string.IsNullOrEmpty(message)) line.Append(": ").Append(message);
+            return line.ToString();
+        }
+
+        /// <summary> The tool a bridge method answers: its dots as underscores. </summary>
+        public static string ToolName(string method) => method?.Replace('.', '_') ?? "?";
+
+        private static void LogParams(BridgeClient bridge, string method, object parameters)
+        {
+            if (parameters == null || !bridge.Log.IsEnabled(LogLevel.Debug)) return;
+
+            bridge.Log.LogDebug("{Tool} params {Params}", ToolName(method),
+                JsonConvert.SerializeObject(parameters, Formatting.None));
+        }
+
+        private static void LogCall(BridgeClient bridge, string method, long started, string code, string message)
+        {
+            var milliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            var level = code == null || IsExpectedRefusal(code) ? LogLevel.Information : LogLevel.Warning;
+            if (!bridge.Log.IsEnabled(level)) return;
+
+            bridge.Log.Log(level, "{Line}", CallLine(method, milliseconds, code, message));
+        }
+
+        private static bool IsExpectedRefusal(string code) =>
+            code != AgentErrorCode.Internal && code != AgentErrorCode.NotConnected;
 
         /// <summary> An error result in the shape a refusal from the game takes. </summary>
         public static CallToolResult Error(string code, string message)
@@ -56,14 +100,18 @@ namespace BH.MCP.Tools
             object parameters, CancellationToken token)
         {
             bridge.Hints.BeginCall();
+            var started = Stopwatch.GetTimestamp();
+            LogParams(bridge, method, parameters);
 
             try
             {
                 var result = await bridge.CallAsync(method, parameters, token).ConfigureAwait(false);
+                LogCall(bridge, method, started, null, null);
                 return Image(result, bridge.Hints);
             }
             catch (BridgeException e)
             {
+                LogCall(bridge, method, started, e.Code, e.Message);
                 return Refusal(e);
             }
         }

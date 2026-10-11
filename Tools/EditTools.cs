@@ -67,7 +67,7 @@ namespace BH.MCP.Tools
                      + "InSine, OutQuad, ...). A new drawable object has no size: key size, or it shows nothing.\n"
                      + "Example: {\"expectedRevision\":41,\"caption\":\"Ring\",\"ops\":[{\"op\":\"create\","
                      + "\"ref\":\"$a\",\"type\":\"shape\",\"start\":\"s:2\",\"duration\":\"s:1\",\"name\":\"ring\","
-                     + "\"shape\":\"RingHalfThin\"},{\"op\":\"key\",\"id\":\"$a\",\"track\":\"size\","
+                     + "\"shape\":\"Circle_S2_T2\"},{\"op\":\"key\",\"id\":\"$a\",\"track\":\"size\","
                      + "\"frame\":\"s:2\",\"value\":{\"kind\":\"Vector2Value\",\"x\":4,\"y\":4}}]}\n"
                      + "Result: revision, created (ref to id; createdAudio, createdPrefabs for those refs), "
                      + "warnings (clamps and legal oddities), hints. "

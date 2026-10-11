@@ -53,8 +53,8 @@ dotnet publish BH.MCP.csproj -c Release -r win-x64 -o bin/publish/win-x64
 Giving `-r` is what makes it self-contained, single-file and trimmed: the csproj sets those itself.
 Never pass them as `-p:` flags - a command-line property is global, reaches the netstandard SDK through
 the ProjectReference, and fails there (NETSDK1124). Other runtime identifiers (`linux-x64`,
-`osx-arm64`, `osx-x64`) cross-publish the same way. The binary is `Bullet Hero MCP.exe`
-(`Bullet Hero MCP` off Windows). A game build publishes the server itself, with the same command, and
+`osx-arm64`, `osx-x64`) cross-publish the same way. The binary is `mcp.exe`
+(`mcp` off Windows). A game build publishes the server itself, with the same command, and
 puts the binary beside the game's executable.
 
 ## Versions and releases
@@ -78,18 +78,37 @@ it by hand from the Actions tab to build everything without releasing: the archi
 binary's icon; `Icon/icon-64.png` is embedded and sent inline as the MCP `serverInfo` icon. Change
 the PNG, then remake both.
 
+It is the game's face with the colours inverted - dark body, light blue eyes - because the binary sits
+beside the game's executable: at 16 px a badge or a label is unreadable, so only colour tells a player
+which one to start.
+
 ## Connect a client
 
 Any MCP client that launches a stdio server takes the same shape:
 
 ```json
-{ "mcpServers": { "bullet-hero": { "command": "<path to Bullet Hero MCP(.exe)>", "args": ["--endpoint", "<path to endpoint.json>"] } } }
+{ "mcpServers": { "bullet-hero": { "command": "<path to mcp(.exe)>", "args": ["--endpoint", "<path to endpoint.json>"] } } }
 ```
 
 `--endpoint` is optional: without it the server looks in the game's default data folder for this
 machine (`AgentEndpoint.DefaultPath`). The game's Settings screen has a Copy client config button that
 fills both paths in. `--game-exe <path>` is optional too: it names the game `app_launch` starts, which
 otherwise is the installed game beside the server (none for a server in `bin/`).
+
+## Logs
+
+A stdio server belongs to the client that started it: its stderr goes to that client, and a second copy
+started by hand is a different process that nobody talks to. So every server also appends to one shared
+file beside the endpoint file, `<persistentDataPath>/mcp/logs/server.log` (`ServerLog.PathFor`), each line
+carrying its process id. A server starting on a file over `ServerLog.MaxBytes` moves it to `server.1.log`.
+
+- **One line per tool call** (`BridgeTool.CallLine`): `edit_batch 12 ms ok`, or the refusal's code and
+  message. A refusal the AI is meant to handle is `info`; `internal` and `not_connected` are `warn`.
+- **`--log-level <Trace|Debug|Information|Warning|Error>`**, `Information` by default. `Debug` adds each
+  call's parameters and the MCP SDK's own request lines, which are held at `Warning` otherwise.
+- **Started by hand, the server is a log viewer** (`LogViewer`): a console whose stdin is not redirected
+  (a double click) prints what the program is, the client config and the log path, then follows the
+  file. A client always pipes stdin. `--stdio` forces the server, `--logs` the viewer.
 
 ## Tools
 
@@ -153,4 +172,4 @@ through `BridgeTool.ForwardAsync` with a `[Description]` written for the AI (wha
 list the class in `Program.cs` with `WithTools<T>(toolJson)`. A parameter type a tool takes must be
 listed in `ToolJsonContext`: a trimmed binary has no reflection-based JSON and fails to start without it.
 **Never `WithToolsFromAssembly()`**: a trimmed binary finds no tools through it.
-Logging goes to stderr only - stdout is the MCP transport.
+Logging goes to stderr and the shared log file (see Logs), never stdout - stdout is the MCP transport.

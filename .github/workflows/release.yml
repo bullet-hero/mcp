@@ -104,15 +104,15 @@ jobs:
       - name: Pack (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path "publish/Bullet Hero MCP.exe", LICENSE -DestinationPath "$($env:ASSET).zip"
+        run: Compress-Archive -Path "publish/mcp.exe", LICENSE -DestinationPath "$($env:ASSET).zip"
 
       - name: Pack (Linux, macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          chmod +x "publish/Bullet Hero MCP"
+          chmod +x "publish/mcp"
           cp LICENSE publish/
-          tar -czf "$ASSET.tar.gz" -C publish "Bullet Hero MCP" LICENSE
+          tar -czf "$ASSET.tar.gz" -C publish "mcp" LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
