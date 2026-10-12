@@ -143,7 +143,7 @@ namespace BH.MCP
         {
             var server = new JObject
             {
-                ["command"] = exePath ?? "mcp",
+                ["command"] = exePath ?? "BH.MCP",
                 ["args"] = new JArray("--endpoint", endpointPath),
             };
 

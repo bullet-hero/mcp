@@ -53,8 +53,8 @@ dotnet publish BH.MCP.csproj -c Release -r win-x64 -o bin/publish/win-x64
 Giving `-r` is what makes it self-contained, single-file and trimmed: the csproj sets those itself.
 Never pass them as `-p:` flags - a command-line property is global, reaches the netstandard SDK through
 the ProjectReference, and fails there (NETSDK1124). Other runtime identifiers (`linux-x64`,
-`osx-arm64`, `osx-x64`) cross-publish the same way. The binary is `mcp.exe`
-(`mcp` off Windows). A game build publishes the server itself, with the same command, and
+`osx-arm64`, `osx-x64`) cross-publish the same way. The binary is `BH.MCP.exe`
+(`BH.MCP` off Windows). A game build publishes the server itself, with the same command, and
 puts the binary beside the game's executable.
 
 ## Versions and releases
@@ -87,7 +87,7 @@ which one to start.
 Any MCP client that launches a stdio server takes the same shape:
 
 ```json
-{ "mcpServers": { "bullet-hero": { "command": "<path to mcp(.exe)>", "args": ["--endpoint", "<path to endpoint.json>"] } } }
+{ "mcpServers": { "bullet-hero": { "command": "<path to BH.MCP(.exe)>", "args": ["--endpoint", "<path to endpoint.json>"] } } }
 ```
 
 `--endpoint` is optional: without it the server looks in the game's default data folder for this
@@ -116,7 +116,7 @@ Class per area under `Tools/`; the name is the bridge method with `_` for `.`.
 
 | Class | Tool | Does |
 |---|---|---|
-| `SessionTools` | `session_status` | connection, screen, open level, revision, author busy, AI rights |
+| `SessionTools` | `session_status`, `instance_list`, `instance_select` | connection, screen, open level, revision, author busy, AI rights; which running game the calls go to |
 | `AppTools` | `app_navigate` | move the running game to a screen with a launch-argument line |
 | | `app_launch` | start the game when it is not running (server-side, no bridge method) |
 | `LevelTools` | `level_list` | levels in the editor's list (paged) |
@@ -127,6 +127,7 @@ Class per area under `Tools/`; the name is the bridge method with `_` for `.`.
 | | `object_query` | objects by time range, name, type or parent (paged) |
 | | `object_get` | objects in full as readable JSON |
 | | `keys_get` | keyframes of chosen tracks, global frames |
+| | `levelkeys_get` | the level's own camera, game, player and post keys, with the value form each track takes |
 | | `events_get` | markers, beat segments, checkpoints, audio tracks |
 | | `resources_list` | textures, fonts, audios, prefabs, themes, effects |
 | | `shapes_find` | shapes by form, sector, thickness or name |
@@ -150,6 +151,7 @@ Class per area under `Tools/`; the name is the bridge method with `_` for `.`.
 | | `shapes_atlas` | PNG contact sheet of shapes, numbered, with their ids |
 | `CaptureTools` | `view_capture` / `view_filmstrip` | real pixels through the shared playhead; one frame or a labelled sheet |
 | | `playhead_get` / `playhead_set` | the author's playhead (set only while the author is idle) |
+| | `playback_set` | play or pause the editor as its play button does (a level plays as it opens) |
 | `MusicTools` | `music_analyze` | tempo, downbeat, sections, notes from the track (cached) |
 | | `music_table` / `music_strip` | per-bar or per-beat rows; a PNG of band energy, grid, markers, hazards |
 | | `music_resolve` / `music_check` | time address to frame and bar.beat; frames off the beat grid |

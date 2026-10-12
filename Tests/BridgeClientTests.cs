@@ -106,7 +106,7 @@ namespace BH.MCP.Tests
             var refusal = await Refusal(() => Status(client));
 
             Assert.AreEqual(AgentErrorCode.NotConnected, refusal.Code);
-            StringAssert.Contains("open the game", refusal.Message);
+            StringAssert.Contains("open it", refusal.Message);
             StringAssert.Contains("enable MCP", refusal.Message);
         }
 
@@ -190,6 +190,84 @@ namespace BH.MCP.Tests
             Assert.IsFalse(result.IsError == true);
             var body = JObject.Parse(((TextContentBlock)result.Content.Single()).Text);
             Assert.AreEqual("menu", (string)body["screen"]);
+        }
+
+        // The second game's endpoint, filed as the instance of pid beside the default endpoint file.
+        private static void FileAsInstance(FakeBridge game, string defaultEndpointPath, int pid)
+        {
+            Assert.IsTrue(AgentEndpoint.TryRead(game.EndpointPath, out var endpoint, out var error), error);
+            endpoint.Pid = pid;
+            endpoint.Write(AgentEndpoint.InstancePath(defaultEndpointPath, pid));
+        }
+
+        [Test]
+        [Author(Metadata.Author.Vertoker)]
+        [Category(Metadata.Category.Self)]
+        [Category(Metadata.Category.Normal)]
+        public async Task Select_SendsEveryCallToThatGame_AndNullGoesBackToTheDefault()
+        {
+            using var first = new FakeBridge(_directory);
+            using var second = new FakeBridge(Directory.CreateDirectory(Path.Combine(_directory, "b")).FullName);
+            FileAsInstance(second, first.EndpointPath, 222);
+            using var client = new BridgeClient(first.EndpointPath);
+
+            await client.SelectAsync(222);
+            await Status(client);
+
+            Assert.AreEqual(0, first.ConnectionCount);
+            Assert.AreEqual(1, second.ConnectionCount);
+
+            await client.SelectAsync(null);
+            await Status(client);
+
+            Assert.AreEqual(1, first.ConnectionCount);
+            Assert.IsNull(client.SelectedPid);
+        }
+
+        [Test]
+        [Author(Metadata.Author.Vertoker)]
+        [Category(Metadata.Category.Self)]
+        [Category(Metadata.Category.Normal)]
+        public async Task ASelectedGameThatIsGone_IsNotConnected_PointingAtInstanceList()
+        {
+            using var bridge = new FakeBridge(_directory);
+            using var client = new BridgeClient(bridge.EndpointPath);
+
+            await client.SelectAsync(333);
+            var refusal = await Refusal(() => Status(client));
+
+            Assert.AreEqual(AgentErrorCode.NotConnected, refusal.Code);
+            StringAssert.Contains("pid 333", refusal.Message);
+            StringAssert.Contains("instance_list", refusal.Message);
+        }
+
+        [Test]
+        [Author(Metadata.Author.Vertoker)]
+        [Category(Metadata.Category.Self)]
+        [Category(Metadata.Category.Normal)]
+        public async Task InstanceTools_ListOnlyLiveGames_AndSelectRefusesAPidNotRunning()
+        {
+            using var first = new FakeBridge(_directory);
+            using var second = new FakeBridge(Directory.CreateDirectory(Path.Combine(_directory, "b")).FullName);
+            var live = Environment.ProcessId;
+            const int dead = int.MaxValue - 7;
+            FileAsInstance(second, first.EndpointPath, live);
+            FileAsInstance(second, first.EndpointPath, dead);
+            using var client = new BridgeClient(first.EndpointPath);
+            var tools = new SessionTools(client);
+
+            var listed = JObject.Parse(((TextContentBlock)tools.InstanceList().Content.Single()).Text);
+            var refused = await tools.InstanceSelect(dead);
+            var selected = await tools.InstanceSelect(live);
+            await Status(client);
+
+            var instances = (JArray)listed["instances"];
+            Assert.AreEqual(1, instances.Count);
+            Assert.AreEqual(live, (int)instances[0]["pid"]);
+            Assert.IsFalse((bool)instances[0]["isDefault"]);
+            Assert.IsTrue(refused.IsError);
+            Assert.IsFalse(selected.IsError == true);
+            Assert.AreEqual(1, second.ConnectionCount);
         }
     }
 

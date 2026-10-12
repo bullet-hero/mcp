@@ -178,12 +178,25 @@ namespace BH.MCP.Tools
         public static List<JObject> Objects(JsonElement array)
         {
             var list = new List<JObject>();
-            if (array.ValueKind != JsonValueKind.Array) return list;
+            var token = array.ValueKind == JsonValueKind.String ? ParseQuoted(array.GetString()) : null;
+            if (token == null && array.ValueKind == JsonValueKind.Array) token = JToken.Parse(array.GetRawText());
+            if (!(token is JArray items)) return list;
 
-            foreach (var item in array.EnumerateArray())
-                list.Add(item.ValueKind == JsonValueKind.Object ? JObject.Parse(item.GetRawText()) : null);
-
+            foreach (var item in items) list.Add(item as JObject);
             return list;
+        }
+
+        // Some clients send a JSON argument as a string holding the JSON; an array in it is taken as meant.
+        private static JToken ParseQuoted(string text)
+        {
+            try
+            {
+                return string.IsNullOrWhiteSpace(text) ? null : JToken.Parse(text);
+            }
+            catch (JsonReaderException)
+            {
+                return null;
+            }
         }
 
         internal static CallToolResult Text(string text, bool isError) => new CallToolResult

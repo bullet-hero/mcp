@@ -25,7 +25,7 @@ namespace BH.MCP.Tools
         public Task<CallToolResult> SelectionGet(CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.SelectionGet, null, token);
 
-        [McpServerTool(Name = "selection_set")]
+        [McpServerTool(Name = "selection_set", ReadOnly = false, Destructive = false, Idempotent = true)]
         [Description("Replaces the author's selection, e.g. to show what you changed. An empty list clears it. "
                      + "Nothing is selected if any id does not exist. Refused with user_busy mid-drag.")]
         public Task<CallToolResult> SelectionSet(

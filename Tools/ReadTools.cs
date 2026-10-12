@@ -94,6 +94,27 @@ namespace BH.MCP.Tools
                 Offset = offset, Limit = limit,
             }, token);
 
+        [McpServerTool(Name = "levelkeys_get", ReadOnly = true)]
+        [Description("Keyframes of the level's own tracks (what edit_batch levelkey writes), as JSON: frame "
+                     + "(global), ease, value; and forms: per track, a default value in the exact form levelkey "
+                     + "takes, to copy and edit. Owners and tracks: camera position rotation zoom pivot shake; "
+                     + "game marker checkpoint screenLimit background theme; player visible control collision "
+                     + "size speed; post bloom chromatic vignette lens grain motionBlur colorCurves liftGammaGain "
+                     + "shadowsMidtonesHighlights whiteBalance analogGlitch digitalGlitch.")]
+        public Task<CallToolResult> LevelKeysGet(
+            [Description("camera, game, player or post.")] string owner,
+            [Description("Tracks of that owner; absent for all of them.")] string[] tracks = null,
+            [Description("Keys at or after this frame. " + TimeDoc)] JsonElement? from = null,
+            [Description("Keys at or before this frame. " + TimeDoc)] JsonElement? to = null,
+            [Description("Keys to skip per track.")] int? offset = null,
+            [Description("Keys to return per track, default 100, max 500.")] int? limit = null,
+            CancellationToken token = default)
+            => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.LevelKeysGet, new LevelKeysGetRequest
+            {
+                Owner = owner, Tracks = tracks?.ToList(), From = BridgeTool.Time(from), To = BridgeTool.Time(to),
+                Offset = offset, Limit = limit,
+            }, token);
+
         [McpServerTool(Name = "events_get", ReadOnly = true)]
         [Description("Level-wide events as JSON, one line per event, grouped by kind: markers, beats (beat "
                      + "segments with tempo), checkpoints, audio (tracks). totals gives the count per kind; "

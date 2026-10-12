@@ -18,7 +18,8 @@ namespace BH.MCP.Tools
     public sealed class CaptureTools
     {
         private const string FrameDoc = "Global frame from 1 (120 or \"f:120\") or seconds (\"s:12.5\").";
-        private const string Refusals = "Refused: user_busy (the author is working: retry later), preempted "
+        private const string Refusals = "Refused: user_busy (the author is working, or the editor is playing: "
+                                        + "playback_set pauses it), preempted "
                                         + "(the author touched the editor mid-capture; the playhead stays where "
                                         + "they put it), busy (a save or export), prefab_mode.";
 
@@ -26,7 +27,7 @@ namespace BH.MCP.Tools
 
         public CaptureTools(BridgeClient bridge) => _bridge = bridge;
 
-        [McpServerTool(Name = "view_capture")]
+        [McpServerTool(Name = "view_capture", ReadOnly = false, Destructive = false, Idempotent = true)]
         [Description("A PNG of the real game picture at a frame, through the level camera with effects and "
                      + "post-processing, editor overlays hidden. It MOVES the author's playhead for a moment "
                      + "and, by the author's setting, puts it back or leaves it there; playhead in the result "
@@ -38,7 +39,7 @@ namespace BH.MCP.Tools
             => BridgeTool.ForwardImageAsync(_bridge, AgentProtocol.Methods.ViewCapture,
                 new ViewCaptureRequest { Frame = BridgeTool.Time(frame), Size = size }, token);
 
-        [McpServerTool(Name = "view_filmstrip")]
+        [McpServerTool(Name = "view_filmstrip", ReadOnly = false, Destructive = false, Idempotent = true)]
         [Description("Several real frames as one labelled contact sheet (f<frame> under each cell): either "
                      + "frames, or from/to with count spread evenly, ends included (default 6, max 16). "
                      + "Captures one after another through the playhead like view_capture; one interruption "
@@ -66,13 +67,28 @@ namespace BH.MCP.Tools
         public Task<CallToolResult> PlayheadGet(CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.PlayheadGet, null, token);
 
-        [McpServerTool(Name = "playhead_set")]
+        [McpServerTool(Name = "playhead_set", ReadOnly = false, Destructive = false, Idempotent = true)]
         [Description("Moves the author's playhead to a frame, paused, to show the author something. Only "
-                     + "while the author is idle: refused with user_busy otherwise.")]
+                     + "while the author is idle: refused with user_busy otherwise (playback counts as busy; "
+                     + "playback_set pauses it).")]
         public Task<CallToolResult> PlayheadSet(
             [Description(FrameDoc)] JsonElement frame,
             CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.PlayheadSet,
                 new PlayheadSetRequest { Frame = BridgeTool.Time(frame) }, token);
+
+        [McpServerTool(Name = "playback_set", ReadOnly = false, Destructive = false, Idempotent = true)]
+        [Description("Plays or pauses the editor, as the author's play button does, optionally from a frame. "
+                     + "The editor starts playing when a level opens, and playback makes the author busy, so "
+                     + "every capture, playhead move and music_play is refused until it is paused: pause first. "
+                     + "Do not pause playback the author is watching on purpose; ask. Refused only while the "
+                     + "author's hands are on the editor (user_busy: drag, scrub, typing) or a save runs (busy). "
+                     + "Returns the playhead.")]
+        public Task<CallToolResult> PlaybackSet(
+            [Description("True to play, false to pause.")] bool playing,
+            [Description("Where to start or pause; absent to stay. " + FrameDoc)] JsonElement? frame = null,
+            CancellationToken token = default)
+            => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.PlaybackSet,
+                new PlaybackSetRequest { Playing = playing, Frame = BridgeTool.Time(frame) }, token);
     }
 }

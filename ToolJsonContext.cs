@@ -11,6 +11,7 @@ namespace BH.MCP
     [JsonSerializable(typeof(int?))]
     [JsonSerializable(typeof(int[]))]
     [JsonSerializable(typeof(long?))]
+    [JsonSerializable(typeof(bool))]
     [JsonSerializable(typeof(bool?))]
     [JsonSerializable(typeof(string[]))]
     [JsonSerializable(typeof(JsonElement))]

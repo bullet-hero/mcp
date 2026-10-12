@@ -28,7 +28,7 @@ namespace BH.MCP.Tools
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.HistoryGet,
                 new HistoryGetRequest { Offset = offset, Limit = limit }, token);
 
-        [McpServerTool(Name = "history_undo")]
+        [McpServerTool(Name = "history_undo", ReadOnly = false, Destructive = false, Idempotent = false)]
         [Description("Undoes the last history step, whoever made it: the author's Ctrl+Z. One AI batch is one "
                      + "step. applied is false when there is nothing to undo. Refused while the editor is "
                      + "locked or the author is dragging.")]
@@ -39,7 +39,7 @@ namespace BH.MCP.Tools
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.HistoryUndo,
                 new HistoryStepRequest { ExpectedRevision = expectedRevision }, token);
 
-        [McpServerTool(Name = "history_redo")]
+        [McpServerTool(Name = "history_redo", ReadOnly = false, Destructive = false, Idempotent = false)]
         [Description("Redoes the last undone step (the author's Ctrl+Y). applied is false when there is nothing "
                      + "to redo. Same refusals as history_undo.")]
         public Task<CallToolResult> HistoryRedo(

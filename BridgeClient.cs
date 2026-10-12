@@ -40,6 +40,7 @@ namespace BH.MCP
 
         private readonly string _endpointPath;
         private readonly SemaphoreSlim _gate = new SemaphoreSlim(1, 1);
+        private int? _selectedPid;
         private TcpClient _tcp;
         private NetworkStream _stream;
         private StreamReader _reader;
@@ -54,8 +55,32 @@ namespace BH.MCP
 
         public BridgeClient(string endpointPath) => _endpointPath = endpointPath;
 
-        /// <summary> The endpoint file this client reads on every connect. </summary>
+        /// <summary> The default endpoint file: the last game to start writes it. </summary>
         public string EndpointPath => _endpointPath;
+
+        /// <summary> The game every call goes to, or null for the default one. </summary>
+        public int? SelectedPid => _selectedPid;
+
+        /// <summary> The endpoint file read on every connect: the selected game's own, or the default. </summary>
+        public string TargetPath
+            => _selectedPid is { } pid ? AgentEndpoint.InstancePath(_endpointPath, pid) : _endpointPath;
+
+        /// <summary> Points every later call at the game <paramref name="pid"/>, or back at the default for null;
+        /// the open connection is dropped. </summary>
+        public async Task SelectAsync(int? pid)
+        {
+            await _gate.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                _selectedPid = pid;
+                Close();
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
 
         /// <summary> Drops the open connection, so the next call connects to whatever game listens now.
         /// </summary>
@@ -118,12 +143,18 @@ namespace BH.MCP
 
         private static BridgeException NotConnected(string detail) => new BridgeException(
             AgentErrorCode.NotConnected,
-            "Cannot reach Bullet Hero (" + detail + "). Ask the author to open the game and enable MCP in "
-            + "Settings > Game Editor, then retry.");
+            "Cannot reach Bullet Hero (" + detail + "). If the player wants it, app_launch starts the game; "
+            + "otherwise ask the author to open it and enable MCP in Settings -> Game editor -> MCP, then retry.");
 
         private async Task ConnectAsync(CancellationToken token)
         {
-            if (!AgentEndpoint.TryRead(_endpointPath, out var endpoint, out var error)) throw NotConnected(error);
+            var path = TargetPath;
+            if (_selectedPid is { } pid && !File.Exists(path))
+                throw new BridgeException(AgentErrorCode.NotConnected,
+                    $"The selected game (pid {pid}) is gone. instance_list shows the running ones; instance_select "
+                    + "with no pid goes back to the default, the last game started.");
+
+            if (!AgentEndpoint.TryRead(path, out var endpoint, out var error)) throw NotConnected(error);
 
             var tcp = new TcpClient { NoDelay = true };
 

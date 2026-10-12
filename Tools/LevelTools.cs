@@ -30,7 +30,7 @@ namespace BH.MCP.Tools
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.LevelList,
                 new LevelListRequest { Filter = filter, Offset = offset, Limit = limit }, token);
 
-        [McpServerTool(Name = "level_open")]
+        [McpServerTool(Name = "level_open", ReadOnly = false, Destructive = false)]
         [Description("Opens a writable level by id (from level_list) in the editor, replacing the open one. "
                      + "Refused: unsaved_changes (the author has unsaved edits: ask them or level_save first), "
                      + "forbidden (read-only source), protected (needs a passphrase), newer_generation. "
@@ -40,7 +40,7 @@ namespace BH.MCP.Tools
             CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.LevelOpen, new LevelOpenRequest { Id = id }, token);
 
-        [McpServerTool(Name = "level_create")]
+        [McpServerTool(Name = "level_create", ReadOnly = false, Destructive = false, Idempotent = false)]
         [Description("Creates a new empty level and opens it. Refused with unsaved_changes while the open level "
                      + "has unsaved edits. It never writes over an existing level.")]
         public Task<CallToolResult> LevelCreate(
@@ -58,7 +58,7 @@ namespace BH.MCP.Tools
                 Duration = BridgeTool.Time(duration),
             }, token);
 
-        [McpServerTool(Name = "level_save")]
+        [McpServerTool(Name = "level_save", ReadOnly = false, Destructive = false, Idempotent = true)]
         [Description("Saves the OPEN level in place, never another file. Refused with busy while a save or "
                      + "export is running.")]
         public Task<CallToolResult> LevelSave(CancellationToken token = default)

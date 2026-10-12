@@ -18,7 +18,7 @@ namespace BH.MCP.Tools
 
         public PrefabTools(BridgeClient bridge) => _bridge = bridge;
 
-        [McpServerTool(Name = "prefab_mode_enter")]
+        [McpServerTool(Name = "prefab_mode_enter", ReadOnly = false, Destructive = false)]
         [Description("Opens a prefab template for editing, as the author's Prefab Mode does. Afterwards every "
                      + "read and edit_batch works inside the template (results say scope prefab:<guid>), the "
                      + "template root is id -3, and level-wide verbs are refused until prefab_mode_exit. "
@@ -30,7 +30,7 @@ namespace BH.MCP.Tools
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.PrefabModeEnter,
                 new PrefabModeEnterRequest { Id = id }, token);
 
-        [McpServerTool(Name = "prefab_mode_exit")]
+        [McpServerTool(Name = "prefab_mode_exit", ReadOnly = false, Destructive = false)]
         [Description("Leaves the innermost open template (or all of them). Answers depth: 0 is the level.")]
         public Task<CallToolResult> PrefabModeExit(
             [Description("True to leave every open template at once.")] bool? all = null,
@@ -40,8 +40,9 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "prefab_overrides", ReadOnly = true)]
         [Description("What a prefab placement changes against its template, one line per override "
-                     + "(root Name = \"boss\", #5 Layer = 7, #5 Positions[2] = ...). Takes a placement id or "
-                     + "one of its materialized copies (a copy shows only its own lines). Paged.")]
+                     + "(root Name = \"boss\", #5 Layer = 7, #5 Positions = [{localFrame, ease, value}]): values "
+                     + "in the form keys_get prints, key frames LOCAL to the placement's span. Takes a placement "
+                     + "id or one of its materialized copies (a copy shows only its own lines). Paged.")]
         public Task<CallToolResult> PrefabOverrides(
             [Description("Placement object id, or a copy's id.")] int id,
             [Description("Lines to skip.")] int? offset = null,

@@ -19,7 +19,7 @@
     <!-- The server's own version, its ONE copy: the release workflow checks the pv<X.Y.Z> tag against it. -->
     <Version>1.2.0</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-    <AssemblyName>mcp</AssemblyName>
+    <AssemblyName>BH.MCP</AssemblyName>
     <Product>Bullet Hero MCP</Product>
     <AssemblyTitle>Bullet Hero MCP</AssemblyTitle>
     <ApplicationIcon>Icon\icon.ico</ApplicationIcon>

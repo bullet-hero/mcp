@@ -72,7 +72,33 @@ builder.Services
     .WithTools<CaptureTools>(toolJson)
     .WithTools<MusicTools>(toolJson)
     .WithTools<ContextTools>(toolJson)
-    .WithPrompts<WorkflowPrompts>(toolJson);
+    .WithPrompts<WorkflowPrompts>(toolJson)
+    .WithRequestFilters(filters =>
+    {
+        // An argument the binder cannot read is the AI's mistake to fix, not "An error occurred": name it.
+        filters.AddCallToolFilter(next => async (context, token) =>
+        {
+            try
+            {
+                return await next(context, token).ConfigureAwait(false);
+            }
+            catch (Exception e) when (ArgumentErrors.Describe(e) is { } message)
+            {
+                return BridgeTool.Error(AgentErrorCode.InvalidParams, $"{context.Params?.Name}: {message}");
+            }
+        });
+        filters.AddGetPromptFilter(next => async (context, token) =>
+        {
+            try
+            {
+                return await next(context, token).ConfigureAwait(false);
+            }
+            catch (Exception e) when (ArgumentErrors.Describe(e) is { } message)
+            {
+                throw new McpProtocolException($"{context.Params?.Name}: {message}", McpErrorCode.InvalidParams);
+            }
+        });
+    });
 
 var app = builder.Build();
 bridge.Log = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BH.MCP.Calls");

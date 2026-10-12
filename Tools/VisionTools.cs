@@ -65,7 +65,8 @@ namespace BH.MCP.Tools
         [McpServerTool(Name = "cursor_resolve", ReadOnly = true)]
         [Description("Where objects are at one frame: world corners, centre, pivot (what a world-space "
                      + "position key sets), size, rotation, effective layer, the authored and the resolved "
-                     + "span, plays, active, inFrame. Geometry is absent when the object is not in the frame. "
+                     + "span, plays, active, inFrame (built into that frame's state; on or off camera alike: "
+                     + "object_explain says off_camera). Geometry is absent when the object is not in the frame. "
                      + "Ids that do not exist come back in missing.")]
         public Task<CallToolResult> CursorResolve(
             [Description("Object ids, up to 500.")] int[] ids,

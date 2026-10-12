@@ -20,7 +20,7 @@ namespace BH.MCP.Tools
 
         public MaintenanceTools(BridgeClient bridge) => _bridge = bridge;
 
-        [McpServerTool(Name = "resource_import")]
+        [McpServerTool(Name = "resource_import", ReadOnly = false, Destructive = false, Idempotent = false)]
         [Description("Copies a file from disk into the open level's folder and adds it as a resource, as its own "
                      + "undo step (not part of any batch). Texture: png/jpg; font: ttf/otf/ttc; audio: "
                      + "mp3/wav/ogg. Result: the new resource id (negative) and file name. Refused: forbidden "
@@ -40,14 +40,14 @@ namespace BH.MCP.Tools
                      + "kind | summary), a leaf its value in wire form. Walk down by copying child paths. "
                      + "Children are paged.")]
         public Task<CallToolResult> RawGet(
-            [Description("Node path such as level.game.objs[3]; absent for the roots.")] string path = null,
+            [Description("Node path copied from a child line, such as level.game.objs[ObjectId=3].name; absent for the roots.")] string path = null,
             [Description("Children to skip.")] int? offset = null,
             [Description("Children to return, default 100, max 500.")] int? limit = null,
             CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.RawGet,
                 new RawGetRequest { Path = path, Offset = offset, Limit = limit }, token);
 
-        [McpServerTool(Name = "raw_set")]
+        [McpServerTool(Name = "raw_set", ReadOnly = false, Destructive = true)]
         [Description("LAST RESORT, after edit_batch: writes one node of the level file in wire form, unvalidated, "
                      + "as one undo step. Result lists validation issues the edit introduced (newIssues); fix "
                      + "or undo them. Refused: user_busy while the author's Raw tab is editing, prefab_mode, "
@@ -65,16 +65,18 @@ namespace BH.MCP.Tools
             }, token);
 
         [McpServerTool(Name = "command_list", ReadOnly = true)]
-        [Description("Editor commands, one line each: allowed (available or not right now) or excluded with the "
-                     + "reason and the tool to use instead. Paged.")]
+        [Description("Editor commands the AI may run, one line each: id, available or not right now, and what "
+                     + "it does. all: true adds the excluded ones with the reason and the tool to use instead. "
+                     + "Paged.")]
         public Task<CallToolResult> CommandList(
+            [Description("True to list the excluded commands too.")] bool? all = null,
             [Description("Lines to skip.")] int? offset = null,
             [Description("Lines to return, default 100, max 500.")] int? limit = null,
             CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.CommandList,
-                new AgentPagedRequest { Offset = offset, Limit = limit }, token);
+                new CommandListRequest { All = all, Offset = offset, Limit = limit }, token);
 
-        [McpServerTool(Name = "command_run")]
+        [McpServerTool(Name = "command_run", ReadOnly = false, Destructive = false, Idempotent = false)]
         [Description("Runs one allowed editor command (see command_list), e.g. cmd_editor_duplicate on the "
                      + "selection set with selection_set. changed is false when it ran but edited nothing. Refused: forbidden "
                      + "(excluded), not_found, refused (unavailable now), busy, stale, user_busy.")]
@@ -96,7 +98,7 @@ namespace BH.MCP.Tools
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.Validate,
                 new AgentPagedRequest { Offset = offset, Limit = limit }, token);
 
-        [McpServerTool(Name = "validate_fix")]
+        [McpServerTool(Name = "validate_fix", ReadOnly = false, Destructive = true)]
         [Description("Applies the automatic fixes of the validation rules as one undo step (nothing is written "
                      + "when nothing needs fixing). Result: fixedCount, fixes (rule root:path - before -> "
                      + "after), remaining. Refused: user_busy while the author's Rules tab is open, "

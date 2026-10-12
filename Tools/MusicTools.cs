@@ -98,14 +98,16 @@ namespace BH.MCP.Tools
                 Limit = limit,
             }, token);
 
-        [McpServerTool(Name = "music_play")]
+        [McpServerTool(Name = "music_play", ReadOnly = false, Destructive = false, Idempotent = true)]
         [Description("Plays a range in real time for the AUTHOR to listen to (at most 45 s; the call answers "
                      + "when it ends), then puts the playhead back by the author's setting. Use it to ask the "
-                     + "author whether timing feels right. Refused: user_busy; preempted when the author "
-                     + "touches the editor (playback stops, the playhead stays); busy; prefab_mode.")]
+                     + "author whether timing feels right. Refused: user_busy (playback_set pauses the editor "
+                     + "first); refused when the editor's audio is muted (ask the author); preempted when the "
+                     + "author touches the editor (playback stops, the playhead stays); busy; prefab_mode.")]
         public Task<CallToolResult> MusicPlay(
             [Description("Range start. " + TimeDoc)] JsonElement from,
-            [Description("Range end. " + TimeDoc)] JsonElement to,
+            [Description("Range end, inclusive; the level's end (\"s:60\" in a 60 s level) means its last frame. " + TimeDoc)]
+            JsonElement to,
             CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.MusicPlay,
                 new MusicPlayRequest { From = BridgeTool.Time(from), To = BridgeTool.Time(to) }, token);
@@ -125,11 +127,11 @@ namespace BH.MCP.Tools
                 Resource = resource, From = BridgeTool.Time(from), To = BridgeTool.Time(to),
             }, token);
 
-        [McpServerTool(Name = "beatgrid_apply")]
+        [McpServerTool(Name = "beatgrid_apply", ReadOnly = false, Destructive = true)]
         [Description("Writes beat segments as ONE undo step: existing segments they overlap are trimmed, split "
                      + "or removed first. Result lists every segment afterwards. Refused: stale, user_busy, "
-                     + "locked, busy, prefab_mode, refused (overlap among the given segments, the segment "
-                     + "limit), invalid_params.")]
+                     + "locked, busy, prefab_mode, refused (the segment limit), invalid_params (overlap among "
+                     + "the given segments, a bad field).")]
         public Task<CallToolResult> BeatgridApply(
             [Description("Revision from your last read; a mismatch is stale.")] int expectedRevision,
             [Description("Segments as beatgrid_propose returns them: [{start, duration, bpm, offset, "

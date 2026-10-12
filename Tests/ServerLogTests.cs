@@ -166,8 +166,8 @@ namespace BH.MCP.Tests
         public void ClientConfig_IsTheShapeTheGameCopies()
         {
             Assert.AreEqual(
-                "{\"mcpServers\":{\"bullet-hero\":{\"command\":\"C:\\\\g\\\\mcp.exe\",\"args\":[\"--endpoint\",\"e.json\"]}}}",
-                LogViewer.ClientConfig(@"C:\g\mcp.exe", "e.json"));
+                "{\"mcpServers\":{\"bullet-hero\":{\"command\":\"C:\\\\g\\\\BH.MCP.exe\",\"args\":[\"--endpoint\",\"e.json\"]}}}",
+                LogViewer.ClientConfig(@"C:\g\BH.MCP.exe", "e.json"));
         }
     }
 }

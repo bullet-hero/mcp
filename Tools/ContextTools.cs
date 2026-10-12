@@ -36,7 +36,7 @@ namespace BH.MCP.Tools
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.ContextRead,
                 new ContextReadRequest { File = file }, token);
 
-        [McpServerTool(Name = "context_write")]
+        [McpServerTool(Name = "context_write", ReadOnly = false, Destructive = true)]
         [Description("Records what a future session needs in the level's ai/ folder: either content (replaces "
                      + "the file) or heading + text (appends text under that heading of a .md file, adding the "
                      + "heading when missing). CONTEXT.md sections: Brief, Music, Sections, Decisions, Author "

@@ -44,7 +44,7 @@ namespace BH.MCP.Tools
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.GeneratorSchema,
                 new GeneratorSchemaRequest { Id = id }, token);
 
-        [McpServerTool(Name = "generator_run")]
+        [McpServerTool(Name = "generator_run", ReadOnly = false, Destructive = true, Idempotent = false)]
         [Description("Runs a generator over [start, end) as ONE undo step (History: \"Generator: <id>\" or your "
                      + "caption). Parameters not given keep their defaults; out-of-range numbers are clamped "
                      + "with a warning; an unknown field is invalid_params. Result: createdCount and created as "

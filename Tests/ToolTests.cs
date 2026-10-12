@@ -44,7 +44,7 @@ namespace BH.MCP.Tests
         };
 
         // Tools the server answers itself, with no bridge method behind them.
-        private static readonly string[] ServerOnlyTools = { "app_launch" };
+        private static readonly string[] ServerOnlyTools = { "app_launch", "instance_list", "instance_select" };
 
         private static JsonElement Json(string text) => JsonDocument.Parse(text).RootElement.Clone();
 
@@ -77,6 +77,9 @@ namespace BH.MCP.Tests
             yield return Row("keys_get", AgentProtocol.Methods.KeysGet,
                 "{\"id\":4,\"tracks\":[\"position\",\"size\"],\"from\":5,\"to\":\"s:2\",\"offset\":1,\"limit\":3}",
                 t => t.Read.KeysGet(4, new[] { "position", "size" }, Json("5"), Json("\"s:2\""), 1, 3));
+            yield return Row("levelkeys_get", AgentProtocol.Methods.LevelKeysGet,
+                "{\"owner\":\"camera\",\"tracks\":[\"zoom\"],\"to\":\"s:2\",\"limit\":3}",
+                t => t.Read.LevelKeysGet("camera", new[] { "zoom" }, null, Json("\"s:2\""), null, 3));
             yield return Row("events_get", AgentProtocol.Methods.EventsGet, "{\"kinds\":[\"beats\"],\"limit\":7}",
                 t => t.Read.EventsGet(new[] { "beats" }, null, 7));
             yield return Row("resources_list", AgentProtocol.Methods.ResourcesList, "{\"kind\":\"fonts\",\"offset\":2}",
@@ -153,6 +156,8 @@ namespace BH.MCP.Tests
             yield return Row("playhead_get", AgentProtocol.Methods.PlayheadGet, null, t => t.Capture.PlayheadGet());
             yield return Row("playhead_set", AgentProtocol.Methods.PlayheadSet, "{\"frame\":\"f:90\"}",
                 t => t.Capture.PlayheadSet(Json("\"f:90\"")));
+            yield return Row("playback_set", AgentProtocol.Methods.PlaybackSet, "{\"playing\":false,\"frame\":30}",
+                t => t.Capture.PlaybackSet(false, Json("30")));
             yield return Row("music_analyze", AgentProtocol.Methods.MusicAnalyze, "{\"resource\":-2}",
                 t => t.Music.MusicAnalyze(-2));
             yield return Row("music_table", AgentProtocol.Methods.MusicTable,
@@ -181,6 +186,16 @@ namespace BH.MCP.Tests
                 t => t.Context.ContextWrite(heading: "Decisions", text: "t"));
             yield return Row("guide_get", AgentProtocol.Methods.GuideGet, "{\"topic\":\"time\"}",
                 t => t.Context.GuideGet("time"));
+        }
+
+        // Variants of a row above: another shape of the same call, beyond the one row per method.
+        public static IEnumerable<TestCaseData> Variants()
+        {
+            yield return Row("edit_batch (ops as a JSON string)", AgentProtocol.Methods.EditBatch,
+                "{\"expectedRevision\":41,\"caption\":\"C\",\"ops\":[{\"op\":\"name\",\"id\":4,\"value\":\"x\"}]}",
+                t => t.Edit.EditBatch(41, "C", Json("\"[{\\\"op\\\":\\\"name\\\",\\\"id\\\":4,\\\"value\\\":\\\"x\\\"}]\"")));
+            yield return Row("command_list (all)", AgentProtocol.Methods.CommandList, "{\"all\":true}",
+                t => t.Maintenance.CommandList(true));
         }
 
         private static TestCaseData Row(string tool, string method, string expectedParams,
@@ -231,6 +246,7 @@ namespace BH.MCP.Tests
         }
 
         [TestCaseSource(nameof(Calls))]
+        [TestCaseSource(nameof(Variants))]
         [Author(Metadata.Author.Vertoker)]
         [Category(Metadata.Category.Self)]
         [Category(Metadata.Category.Normal)]

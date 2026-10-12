@@ -104,15 +104,15 @@ jobs:
       - name: Pack (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path "publish/mcp.exe", LICENSE -DestinationPath "$($env:ASSET).zip"
+        run: Compress-Archive -Path "publish/BH.MCP.exe", LICENSE -DestinationPath "$($env:ASSET).zip"
 
       - name: Pack (Linux, macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          chmod +x "publish/mcp"
+          chmod +x "publish/BH.MCP"
           cp LICENSE publish/
-          tar -czf "$ASSET.tar.gz" -C publish "mcp" LICENSE
+          tar -czf "$ASSET.tar.gz" -C publish "BH.MCP" LICENSE
 
       - uses: actions/upload-artifact@v4
         with:

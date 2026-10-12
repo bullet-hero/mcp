@@ -88,14 +88,20 @@ namespace BH.MCP
         {
             if (!AgentEndpoint.TryRead(endpointPath, out var endpoint, out _)) return null;
 
+            return IsAlive(endpoint.Pid) ? endpoint.Pid : null;
+        }
+
+        /// <summary> Whether a process <paramref name="pid"/> runs now. </summary>
+        public static bool IsAlive(int pid)
+        {
             try
             {
-                using var process = Process.GetProcessById(endpoint.Pid);
-                return process.HasExited ? null : endpoint.Pid;
+                using var process = Process.GetProcessById(pid);
+                return !process.HasExited;
             }
             catch (Exception e) when (e is ArgumentException || e is InvalidOperationException)
             {
-                return null;
+                return false;
             }
         }
 
