@@ -36,9 +36,10 @@ namespace BH.MCP.Tools
                 new AgentPagedRequest { Offset = offset, Limit = limit }, token);
 
         [McpServerTool(Name = "generator_schema", ReadOnly = true)]
-        [Description("A generator's parameters as a JSON schema in form order: type, default, minimum/maximum, "
-                     + "enum, x-unit, x-step, x-visible. x-hostFilled fields are filled by the editor and "
-                     + "cannot be set.")]
+        [Description("A generator's parameters as a JSON schema in form order: type, description, default, "
+                     + "minimum/maximum, enum, x-unit, x-step, x-visible. x-hostFilled fields are filled by the "
+                     + "editor and cannot be set. Shape and Collider take a catalog name (\"Circle\") or a shape "
+                     + "id; a Collider left empty makes harmless decoration. Angles are degrees here.")]
         public Task<CallToolResult> GeneratorSchema(
             [Description("Generator id from generator_list.")] string id,
             CancellationToken token = default)
@@ -47,8 +48,10 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "generator_run", ReadOnly = false, Destructive = true, Idempotent = false)]
         [Description("Runs a generator over [start, end) as ONE undo step (History: \"Generator: <id>\" or your "
-                     + "caption). Parameters not given keep their defaults; out-of-range numbers are clamped "
-                     + "with a warning; an unknown field is invalid_params. Result: createdCount and created as "
+                     + "caption). Parameters not given keep their defaults. Without layer a content run takes "
+                     + "the first free layer over its window. Bullet generators hurt nothing until "
+                     + "parameters.Collider is set (a warning says so). Out-of-range numbers are clamped with a "
+                     + "warning; an unknown field is invalid_params. Result: createdCount and created as "
                      + "id runs (\"41-104\"). Refused: stale, user_busy, locked, refused (reason; nothing "
                      + "changed), e.g. a dangerous generator without confirmDangerous or a modifier with no "
                      + "selection.")]

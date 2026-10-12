@@ -28,9 +28,11 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "view_schematic", ReadOnly = true)]
         [Description("A PNG schematic of any frame, computed off screen: the author's playhead does not move. "
-                     + "Shapes are filled with their mean colour at half alpha, colliders (what hurts the "
-                     + "player) outlined red, the camera rect yellow, #id at object centres. Texts and effects "
-                     + "are not drawn. Use it before and after edits; view_capture shows the real look. "
+                     + "Shapes are filled with their mean colour at 3/4 alpha in draw order (the upper of two "
+                     + "overlapping shapes dominates), colliders (what hurts the player) outlined red, the camera "
+                     + "rect yellow, #id at the centres of active objects; the counts are what the region shows. "
+                     + "Texts, effects and post-processing are not drawn. Use it before and after edits; "
+                     + "view_capture shows the real look, bloom and colour grading included. "
                      + "Refused: prefab_mode (it draws the level), invalid_params.")]
         public Task<CallToolResult> ViewSchematic(
             [Description(FrameDoc)] JsonElement frame,
@@ -65,7 +67,8 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "cursor_resolve", ReadOnly = true)]
         [Description("Where objects are at one frame: world corners, centre, pivot (what a world-space "
-                     + "position key sets), size, rotation, effective layer, the authored and the resolved "
+                     + "position key sets), size, rotation (radians, as a rotation key takes it, plus "
+                     + "rotationDegrees), effective layer, the authored and the resolved "
                      + "span, plays, active, inFrame (built into that frame's state; on or off camera alike: "
                      + "object_explain says off_camera). Geometry is absent when the object is not in the frame. "
                      + "Ids that do not exist come back in missing.")]

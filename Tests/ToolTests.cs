@@ -452,6 +452,21 @@ namespace BH.MCP.Tests
         [Author(Metadata.Author.Vertoker)]
         [Category(Metadata.Category.Self)]
         [Category(Metadata.Category.Easy)]
+        public void APage_KeepsItsOwnFields_ShortInTheHeader_LongOnTheirOwnLine()
+        {
+            var page = JObject.FromObject(new AgentPagedResult { Total = 1, Revision = 3, Scope = "level", Lines = { "x" } });
+            page["errors"] = 2;
+            page["grid"] = "level";
+            page["legend"] = "rows follow the level's beat grid";
+
+            Assert.AreEqual("total=1 offset=0 revision=3 scope=level errors=2 grid=level\n" +
+                            "legend: rows follow the level's beat grid\nx", BridgeTool.Shape(page, new HintFilter()));
+        }
+
+        [Test]
+        [Author(Metadata.Author.Vertoker)]
+        [Category(Metadata.Category.Self)]
+        [Category(Metadata.Category.Easy)]
         public void ASingleResult_IsCompactJson()
         {
             var result = JObject.FromObject(new SelectionResult { Revision = 2, Ids = { 3 } });

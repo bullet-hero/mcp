@@ -135,6 +135,13 @@ namespace BH.MCP.Tools
             };
         }
 
+        private const int ShortField = 40;
+
+        private static readonly HashSet<string> PageFields = new()
+        {
+            "total", "offset", "revision", "scope", "sessionId", "lines", "hints",
+        };
+
         /// <summary> A page as a header line and its lines; anything else as compact JSON. Hints are
         /// filtered through <paramref name="hints"/> and come last. </summary>
         public static string Shape(JToken result, HintFilter hints)
@@ -159,6 +166,22 @@ namespace BH.MCP.Tools
 
             if (offset + lines.Count < total) text.Append(" next=").Append(offset + lines.Count);
 
+            // A page's own fields (a legend, which grid the rows follow, the error count) say how to read it.
+            var notes = new List<string>();
+            foreach (var property in obj.Properties())
+            {
+                if (PageFields.Contains(property.Name) || property.Value.Type == JTokenType.Null) continue;
+
+                var value = property.Value.Type == JTokenType.String
+                    ? property.Value.Value<string>()
+                    : property.Value.ToString(Formatting.None);
+                if (property.Value is JValue && value.Length <= ShortField && !value.Contains(' '))
+                    text.Append(' ').Append(property.Name).Append('=').Append(value);
+                else
+                    notes.Add(property.Name + ": " + value);
+            }
+
+            foreach (var note in notes) text.Append('\n').Append(note);
             foreach (var line in lines) text.Append('\n').Append(line.Value<string>());
             foreach (var hint in due) text.Append("\nhint: ").Append(hint);
             return text.ToString();

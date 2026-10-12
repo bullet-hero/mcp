@@ -130,7 +130,9 @@ namespace BH.MCP.Tools
                 new EventsGetRequest { Kinds = kinds?.ToList(), Offset = offset, Limit = limit }, token);
 
         [McpServerTool(Name = "resources_list", ReadOnly = true)]
-        [Description("The level's resources of one kind, one line each with id and name. " + PageDoc)]
+        [Description("The level's resources of one kind, one line each with id and name; for effects, themes, "
+                     + "fonts and audios the game's presets follow, marked game: usable by id or name as they "
+                     + "are, nothing to import. " + PageDoc)]
         public Task<CallToolResult> ResourcesList(
             [Description("textures, fonts, audios, prefabs, themes or effects.")] string kind,
             [Description("Lines to skip.")] int? offset = null,

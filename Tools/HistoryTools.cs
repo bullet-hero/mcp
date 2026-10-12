@@ -51,7 +51,8 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "changes_since", ReadOnly = true)]
         [Description("What changed after a revision, oldest first, as JSON: revision, source (ai or author), "
-                     + "operation name key, caption of an AI batch. Use it after stale to see what the author "
+                     + "operation name key and its English name, caption of an AI batch, undo true for a step "
+                     + "back (naming the step it left). Use it after stale to see what the author "
                      + "did. truncated true means the log is too short: re-read what matters.")]
         public Task<CallToolResult> ChangesSince(
             [Description("The last revision you have seen.")] int revision,
