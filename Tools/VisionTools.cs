@@ -84,8 +84,9 @@ namespace BH.MCP.Tools
         [McpServerTool(Name = "object_explain", ReadOnly = true)]
         [Description("Why an object is or is not drawn at a frame: the first reason that applies, in order "
                      + "outside_span, resolved_away (a parent's span clips it), orphan, not_in_frame or "
-                     + "capacity_overflow, not_drawable (a rect group), zero_size, inactive, no_mesh, no_effect, "
-                     + "transparent, off_camera, capacity_overflow, else drawn; detail gives the numbers.")]
+                     + "capacity_overflow (the frame's object slots ran out), not_drawable (a rect group), "
+                     + "zero_size, inactive, no_mesh, no_effect, transparent, off_camera, capacity_overflow (its "
+                     + "shape slots ran out), else drawn; detail gives the numbers.")]
         public Task<CallToolResult> ObjectExplain(
             [Description("Object id.")] int id,
             [Description(FrameDoc)] JsonElement frame,

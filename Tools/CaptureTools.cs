@@ -32,13 +32,21 @@ namespace BH.MCP.Tools
         [Description("A PNG of the real game picture at a frame, through the level camera with effects and "
                      + "post-processing, editor overlays hidden. It MOVES the author's playhead for a moment "
                      + "and, by the author's setting, puts it back or leaves it there; playhead in the result "
-                     + "is where it ended. Prefer view_schematic for layout checks. " + Refusals)]
+                     + "is where it ended. With region it frames that world rect instead, for a close look at "
+                     + "detail the image limit would lose (nothing in the level changes). Prefer view_schematic "
+                     + "for layout checks. " + Refusals)]
         public Task<CallToolResult> ViewCapture(
             [Description(FrameDoc)] JsonElement frame,
             [Description("Longest side in pixels, capped by the game's image limit.")] int? size = null,
+            [Description("World rect {x, y, width, height} to frame, x/y its lower-left corner; absent for the "
+                         + "level camera's view. The image takes its aspect.")] JsonElement? region = null,
             CancellationToken token = default)
             => BridgeTool.ForwardImageAsync(_bridge, AgentProtocol.Methods.ViewCapture,
-                new ViewCaptureRequest { Frame = BridgeTool.Time(frame), Size = size }, token);
+                new ViewCaptureRequest
+                {
+                    Frame = BridgeTool.Time(frame), Size = size,
+                    Region = BridgeTool.Time(region)?.ToObject<AgentRegion>(),
+                }, token);
 
         [McpServerTool(Name = "view_filmstrip", ReadOnly = false, Destructive = false, Idempotent = true)]
         [Description("Several real frames as one labelled contact sheet (f<frame> under each cell): either "
@@ -80,7 +88,8 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "playback_set", ReadOnly = false, Destructive = false, Idempotent = true)]
         [Description("Plays or pauses the editor, as the author's play button does, optionally from a frame. "
-                     + "The editor starts playing when a level opens, and playback makes the author busy, so "
+                     + "A level the author opens starts playing (one level_open or level_create opens stays "
+                     + "paused), and playback makes the author busy, so "
                      + "every capture, playhead move and music_play is refused until it is paused: pause first. "
                      + "Do not pause playback the author is watching on purpose; ask. Refused only while the "
                      + "author's hands are on the editor (user_busy: drag, scrub, typing) or a save runs (busy). "

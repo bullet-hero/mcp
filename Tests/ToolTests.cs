@@ -148,8 +148,10 @@ namespace BH.MCP.Tests
             yield return Row("shapes_atlas", AgentProtocol.Methods.ShapesAtlas,
                 "{\"form\":\"Ring\",\"name\":\"r\",\"offset\":99}",
                 t => t.Vision.ShapesAtlas("Ring", null, null, "r", 99));
-            yield return Row("view_capture", AgentProtocol.Methods.ViewCapture, "{\"frame\":\"s:3\",\"size\":400}",
-                t => t.Capture.ViewCapture(Json("\"s:3\""), 400));
+            yield return Row("view_capture", AgentProtocol.Methods.ViewCapture,
+                "{\"frame\":\"s:3\",\"size\":400,\"region\":{\"x\":-1.5,\"y\":-1.5,\"width\":2.5,\"height\":1.5}}",
+                t => t.Capture.ViewCapture(Json("\"s:3\""), 400,
+                    Json("{\"x\":-1.5,\"y\":-1.5,\"width\":2.5,\"height\":1.5}")));
             yield return Row("view_filmstrip", AgentProtocol.Methods.ViewFilmstrip,
                 "{\"frames\":[120,\"s:5\"],\"size\":600}",
                 t => t.Capture.ViewFilmstrip(frames: Json("[120,\"s:5\"]"), size: 600));

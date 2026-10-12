@@ -73,7 +73,7 @@ namespace BH.MCP.Tools
             if (silent.HasValue)
                 return BridgeTool.Error(AgentErrorCode.Refused,
                     $"Bullet Hero is already running (pid {silent.Value}) but its MCP bridge does not answer: MCP "
-                    + "may be off in Settings -> Game editor -> MCP, or the game is still loading. Ask the author; "
+                    + "may be off in Settings -> Game Editor -> AI Agent (MCP), or the game is still loading. Ask the author; "
                     + "never start a second copy.");
 
             // No game runs, so a selected one is gone: the started game is the default.
@@ -92,7 +92,7 @@ namespace BH.MCP.Tools
             if (!await _launcher.WaitForEndpointAsync(since, token).ConfigureAwait(false))
                 return BridgeTool.Error(AgentErrorCode.NotConnected,
                     $"The game was started but opened no MCP bridge within {GameLauncher.EndpointWaitSeconds} s: "
-                    + "MCP may be off in Settings -> Game editor -> MCP, or it is still loading. Call "
+                    + "MCP may be off in Settings -> Game Editor -> AI Agent (MCP), or it is still loading. Call "
                     + "session_status in a moment.");
 
             var status = await StatusOnceAScreenIsUp(since, OpensALevel(args), token).ConfigureAwait(false);

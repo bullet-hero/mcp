@@ -28,7 +28,7 @@ namespace BH.MCP.Tools
                      + "(write, open levels, save). Cheap and read-only: call it first and whenever a call fails. "
                      + "If the game is not running or MCP is off you get error not_connected: start it with "
                      + "app_launch if the player wants, or ask the author to open the game and enable MCP in "
-                     + "Settings -> Game editor -> MCP.")]
+                     + "Settings -> Game Editor -> AI Agent (MCP) -> Allow AI Connections.")]
         public Task<CallToolResult> SessionStatus(CancellationToken token)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.SessionStatus, null, token);
 

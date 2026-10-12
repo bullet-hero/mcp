@@ -144,7 +144,7 @@ namespace BH.MCP
         private static BridgeException NotConnected(string detail) => new BridgeException(
             AgentErrorCode.NotConnected,
             "Cannot reach Bullet Hero (" + detail + "). If the player wants it, app_launch starts the game; "
-            + "otherwise ask the author to open it and enable MCP in Settings -> Game editor -> MCP, then retry.");
+            + "otherwise ask the author to open it and enable MCP (Settings -> Game Editor -> AI Agent (MCP) -> Allow AI Connections), then retry.");
 
         private async Task ConnectAsync(CancellationToken token)
         {

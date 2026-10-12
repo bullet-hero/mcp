@@ -119,7 +119,8 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "events_get", ReadOnly = true)]
         [Description("Level-wide events as JSON, one line per event, grouped by kind: markers, beats (beat "
-                     + "segments with tempo), checkpoints, audio (tracks). totals gives the count per kind; "
+                     + "segments with tempo), checkpoints, audio (tracks, with the volume and stereoPan keys "
+                     + "audiokey wrote, at global frames). totals gives the count per kind; "
                      + "offset/limit apply per kind.")]
         public Task<CallToolResult> EventsGet(
             [Description("Any of markers, beats, checkpoints, audio; absent for all four.")] string[] kinds = null,
@@ -130,9 +131,9 @@ namespace BH.MCP.Tools
                 new EventsGetRequest { Kinds = kinds?.ToList(), Offset = offset, Limit = limit }, token);
 
         [McpServerTool(Name = "resources_list", ReadOnly = true)]
-        [Description("The level's resources of one kind, one line each with id and name; for effects, themes, "
-                     + "fonts and audios the game's presets follow, marked game: usable by id or name as they "
-                     + "are, nothing to import. " + PageDoc)]
+        [Description("The level's resources of one kind, one line each: id, name, and level (it travels with "
+                     + "the level) or game (a preset, usable by id or name as it is, nothing to import). The "
+                     + "level's own come first. Game audios are interface sounds, not music. " + PageDoc)]
         public Task<CallToolResult> ResourcesList(
             [Description("textures, fonts, audios, prefabs, themes or effects.")] string kind,
             [Description("Lines to skip.")] int? offset = null,

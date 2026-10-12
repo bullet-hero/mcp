@@ -17,8 +17,8 @@ namespace BH.MCP.Tools
     [McpServerToolType]
     public sealed class MusicTools
     {
-        private const string TimeDoc = "Frame from 1, \"s:12.5\", \"bar:17\", \"bar:17.3\", \"beat:64.5\" or "
-                                       + "\"marker:drop+2bars\".";
+        private const string TimeDoc = "Frame from 1, \"s:12.5\", \"bar:17\", \"bar:17.3\", \"beat:64.5\", "
+                                       + "\"marker:drop\", any of them moved (\"bar:17+2beats\", \"bar:17-1f\").";
         private const string ResourceDoc = "Audio resource id (resources_list audios); absent for the level's "
                                            + "first audio track.";
 
@@ -113,9 +113,10 @@ namespace BH.MCP.Tools
                 new MusicPlayRequest { From = BridgeTool.Time(from), To = BridgeTool.Time(to) }, token);
 
         [McpServerTool(Name = "beatgrid_propose", ReadOnly = true)]
-        [Description("Beat segments made from the analysis, NOT applied: start, duration, bpm, offset (frames "
-                     + "from start to a downbeat), beatsPerBar; notes say what to doubt and which existing "
-                     + "segments an apply would cut. Show the author, then beatgrid_apply.")]
+        [Description("Beat segments made from the analysis, NOT applied: start, duration, bpm (a tempo within "
+                     + "0.01 of a whole number is that number), offset (frames from start to the first downbeat, "
+                     + "under one bar), beatsPerBar; notes say what to doubt and which existing segments an apply "
+                     + "would cut. Show the author, then beatgrid_apply.")]
         public Task<CallToolResult> BeatgridPropose(
             [Description(ResourceDoc)] int? resource = null,
             [Description("Where the grid starts, a frame or seconds; the track start when absent.")]
