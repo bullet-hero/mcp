@@ -385,6 +385,39 @@ namespace BH.MCP.Tests
         [Author(Metadata.Author.Vertoker)]
         [Category(Metadata.Category.Self)]
         [Category(Metadata.Category.Normal)]
+        public async Task ABatchFile_IsReadByTheServer_AsAnArrayOrUnderOps_AndOpsWithItIsRefused()
+        {
+            var plain = Path.Combine(_directory, "plain.json");
+            var wrapped = Path.Combine(_directory, "wrapped.json");
+            Directory.CreateDirectory(_directory);
+            File.WriteAllText(plain, "[{\"op\":\"name\",\"id\":4,\"value\":\"x\"},{\"op\":\"delete\",\"ids\":[5]}]");
+            File.WriteAllText(wrapped, "{\"ops\":[{\"op\":\"name\",\"id\":4,\"value\":\"y\"}]}");
+
+            JToken sent = null;
+            using var bridge = new FakeBridge(_directory);
+            bridge.Responder = request =>
+            {
+                sent = request.Params;
+                return FakeBridge.Ok(request, new JObject { ["revision"] = 42 });
+            };
+            using var client = new BridgeClient(bridge.EndpointPath);
+            var tools = new EditTools(client);
+
+            Assert.IsFalse((await tools.EditBatch(41, "C", opsFile: plain)).IsError == true);
+            Assert.AreEqual(2, ((JArray)sent["ops"]).Count);
+
+            Assert.IsFalse((await tools.EditBatch(41, "C", opsFile: wrapped)).IsError == true);
+            Assert.AreEqual("y", (string)sent["ops"][0]["value"]);
+
+            Assert.IsTrue((await tools.EditBatch(41, "C", Json("[]"), wrapped)).IsError);
+            Assert.IsTrue((await tools.EditBatch(41, "C")).IsError);
+            Assert.IsTrue((await tools.EditBatch(41, "C", opsFile: plain + ".missing")).IsError);
+        }
+
+        [Test]
+        [Author(Metadata.Author.Vertoker)]
+        [Category(Metadata.Category.Self)]
+        [Category(Metadata.Category.Normal)]
         public async Task APictureAnswer_IsAnImageBlock_ThenTheRestAsText()
         {
             var png = new byte[] { 137, 80, 78, 71, 1, 2, 3 };

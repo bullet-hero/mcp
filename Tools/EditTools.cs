@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +10,8 @@ using BH.SDK.Agent;
 using BH.SDK.Agent.Messages;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace BH.MCP.Tools
 {
@@ -52,6 +58,8 @@ namespace BH.MCP.Tools
                      + "crossing), [name], [replace: a level shape to rewrite instead]: a level shape that draws "
                      + "and hits at once, fitted to its bounds; draw it at size = the points' width x height. "
                      + "createdShapes gives its id\n"
+                     + "shapedelete: [shapes [guid|name|$ref]], [unused: true = every level shape no object draws "
+                     + "or collides with]; a shape still in use is refused\n"
                      + "delete: ids [..] (subtrees go too)\n"
                      + "name: id, value\n"
                      + "parent: id, parent (null = root); put it before layer\n"
@@ -120,21 +128,104 @@ namespace BH.MCP.Tools
                      + "span is never reached.\n"
                      + "Example: "
                      + "{\"expectedRevision\":41,\"caption\":\"Roof\",\"ops\":[{\"op\":\"create\",\"ref\":\"$a\",\"type\":\"shape\",\"start\":\"s:2\",\"duration\":\"s:1\",\"name\":\"roof\",\"polygon\":[[-2,0],[2,0],[0,1.5]]},{\"op\":\"key\",\"id\":\"$a\",\"track\":\"color\",\"frame\":\"s:2\",\"value\":\"#E5321EFF\"}]}\n"
-                     + "Result: revision, created (ref to id; createdAudio, createdPrefabs, createdShapes, "
-                     + "createdThemes for those refs), warnings (clamps and legal oddities: a span past the level's "
+                     + "Result: revision, created (ref to id; createdAudio, createdPrefabs, createdThemes for those refs; "
+                     + "createdShapes is shape id to its refs, space-separated: equal polygons share one shape), warnings (clamps and legal oddities: a span past the level's "
                      + "end, keys outside a span), hints. Refusals: stale, user_busy, locked, refused (op index and "
                      + "reason), invalid_params.")]
         public Task<CallToolResult> EditBatch(
             [Description("Revision from your last read; a mismatch is stale.")] int expectedRevision,
             [Description("What the author's History tab shows for this step, e.g. \"Chorus 1: ring bursts\".")]
             string caption,
-            [Description("The ops array (a JSON array of objects), as described by the tool.")] JsonElement ops,
+            [Description("The ops array (a JSON array of objects), as described by the tool. Give it or opsFile.")]
+            JsonElement? ops = null,
+            [Description("Instead of ops: the path of a local UTF-8 JSON file holding the ops array (or an object "
+                         + "with an \"ops\" array). This server reads it, so a big batch - a traced picture - never "
+                         + "travels through the conversation.")]
+            string opsFile = null,
             CancellationToken token = default)
-            => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.EditBatch, new EditBatchRequest
+        {
+            var hasOps = ops.HasValue && ops.Value.ValueKind != JsonValueKind.Null
+                                      && ops.Value.ValueKind != JsonValueKind.Undefined;
+            List<JObject> list;
+            if (!string.IsNullOrWhiteSpace(opsFile))
+            {
+                if (hasOps)
+                    return Task.FromResult(BridgeTool.Error(AgentErrorCode.InvalidParams,
+                        "Give ops or opsFile, not both."));
+                if (!TryReadOpsFile(opsFile, out list, out var error))
+                    return Task.FromResult(BridgeTool.Error(AgentErrorCode.InvalidParams, error));
+            }
+            else if (hasOps)
+            {
+                list = BridgeTool.Objects(ops.Value);
+            }
+            else
+            {
+                return Task.FromResult(BridgeTool.Error(AgentErrorCode.InvalidParams, "ops or opsFile is required."));
+            }
+
+            return BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.EditBatch, new EditBatchRequest
             {
                 ExpectedRevision = expectedRevision,
                 Caption = caption,
-                Ops = BridgeTool.Objects(ops),
+                Ops = list,
             }, token);
+        }
+
+        /// <summary> The ops of a batch file: a JSON array, or an object carrying one under <c>ops</c>. </summary>
+        public static bool TryReadOpsFile(string path, out List<JObject> ops, out string error)
+        {
+            ops = null;
+            error = null;
+            string text;
+            try
+            {
+                var info = new FileInfo(path);
+                if (!info.Exists)
+                {
+                    error = $"opsFile {path} does not exist.";
+                    return false;
+                }
+
+                if (info.Length > MaxOpsFileBytes)
+                {
+                    error = $"opsFile {path} is {info.Length} bytes, over {MaxOpsFileBytes}.";
+                    return false;
+                }
+
+                text = File.ReadAllText(path, Encoding.UTF8);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+                                                  or ArgumentException or NotSupportedException)
+            {
+                error = $"opsFile {path} cannot be read: {exception.Message}";
+                return false;
+            }
+
+            JToken token;
+            try
+            {
+                token = JToken.Parse(text);
+            }
+            catch (JsonReaderException exception)
+            {
+                error = $"opsFile {path} is not JSON: {exception.Message}";
+                return false;
+            }
+
+            if (token is JObject wrapper) token = wrapper["ops"];
+            if (!(token is JArray array))
+            {
+                error = $"opsFile {path} holds no ops array.";
+                return false;
+            }
+
+            ops = new List<JObject>(array.Count);
+            foreach (var item in array) ops.Add(item as JObject);
+            return true;
+        }
+
+        /// <summary> The largest batch file read, bytes. </summary>
+        public const int MaxOpsFileBytes = 8 * 1024 * 1024;
     }
 }

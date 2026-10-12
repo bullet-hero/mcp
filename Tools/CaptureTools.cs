@@ -55,7 +55,8 @@ namespace BH.MCP.Tools
                      + "aborts the whole strip. " + Refusals)]
         public Task<CallToolResult> ViewFilmstrip(
             [Description("First frame of the range. " + FrameDoc)] JsonElement? from = null,
-            [Description("Last frame of the range. " + FrameDoc)] JsonElement? to = null,
+            [Description("End of the range: a frame is the last one; an instant (\"s:3\", \"bar:5\") ends the "
+                         + "range, so the last frame is the one before. " + FrameDoc)] JsonElement? to = null,
             [Description("Frames spread over the range, default 6, max 16.")] int? count = null,
             [Description("Exact frames instead of a range, in display order, e.g. [120, \"s:5\"].")]
             JsonElement? frames = null,

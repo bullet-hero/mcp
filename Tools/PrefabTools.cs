@@ -40,7 +40,7 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "prefab_overrides", ReadOnly = true)]
         [Description("What a prefab placement changes against its template, one line per override "
-                     + "(root Name = \"boss\", #5 Layer = 7, #5 Positions = [{localFrame, ease, value}]): values "
+                     + "(root Name = \"boss\", #5 (copy #25) Layer = 7: the template id, then the copy you address; #5 Positions = [{localFrame, ease, value}]): values "
                      + "in the form keys_get prints, key frames LOCAL to the placement's span. Takes a placement "
                      + "id or one of its materialized copies (a copy shows only its own lines). Paged.")]
         public Task<CallToolResult> PrefabOverrides(

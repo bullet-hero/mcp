@@ -19,6 +19,9 @@ namespace BH.MCP.Tools
     {
         private const string TimeDoc = "Frame from 1, \"s:12.5\", \"bar:17\", \"bar:17.3\", \"beat:64.5\", "
                                        + "\"marker:drop\", any of them moved (\"bar:17+2beats\", \"bar:17-1f\").";
+        private const string ToDoc = "A frame (120, \"f:120\", \"bar:17-1f\") is the range's last frame; "
+                                     + "an instant (\"s:45\", \"bar:12\", \"marker:drop\") ends it, so the last "
+                                     + "frame is the one before. ";
         private const string ResourceDoc = "Audio resource id (resources_list audios); absent for the level's "
                                            + "first audio track.";
 
@@ -44,7 +47,7 @@ namespace BH.MCP.Tools
                      + "level's beat grid, else the analysed tempo (grid says which). Paged.")]
         public Task<CallToolResult> MusicTable(
             [Description("First row's time; the start when absent. " + TimeDoc)] JsonElement? from = null,
-            [Description("Last row's time; the end when absent. " + TimeDoc)] JsonElement? to = null,
+            [Description("Range end; the end when absent. " + ToDoc + TimeDoc)] JsonElement? to = null,
             [Description("bar (default) or beat.")] string by = null,
             [Description(ResourceDoc)] int? resource = null,
             [Description("Rows to skip.")] int? offset = null,
@@ -62,7 +65,7 @@ namespace BH.MCP.Tools
                      + "see whether hazards land on the music.")]
         public Task<CallToolResult> MusicStrip(
             [Description("Range start; the track start when absent. " + TimeDoc)] JsonElement? from = null,
-            [Description("Range end; the track end when absent. " + TimeDoc)] JsonElement? to = null,
+            [Description("Range end; the track end when absent. " + ToDoc + TimeDoc)] JsonElement? to = null,
             [Description("Width in pixels, capped by the game's image limit; the height is fixed.")]
             int? size = null,
             [Description(ResourceDoc)] int? resource = null,
@@ -88,7 +91,7 @@ namespace BH.MCP.Tools
         public Task<CallToolResult> MusicCheck(
             [Description("Allowed distance from a beat in frames, default 1.")] int? tolerance = null,
             [Description("Range start. " + TimeDoc)] JsonElement? from = null,
-            [Description("Range end. " + TimeDoc)] JsonElement? to = null,
+            [Description("Range end. " + ToDoc + TimeDoc)] JsonElement? to = null,
             [Description("Lines to skip.")] int? offset = null,
             [Description("Lines to return, default 100, max 500.")] int? limit = null,
             CancellationToken token = default)
@@ -106,7 +109,7 @@ namespace BH.MCP.Tools
                      + "author touches the editor (playback stops, the playhead stays); busy; prefab_mode.")]
         public Task<CallToolResult> MusicPlay(
             [Description("Range start. " + TimeDoc)] JsonElement from,
-            [Description("Range end, inclusive; the level's end (\"s:60\" in a 60 s level) means its last frame. " + TimeDoc)]
+            [Description("Range end. " + ToDoc + TimeDoc)]
             JsonElement to,
             CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.MusicPlay,
@@ -114,14 +117,14 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "beatgrid_propose", ReadOnly = true)]
         [Description("Beat segments made from the analysis, NOT applied: start, duration, bpm (a tempo within "
-                     + "0.01 of a whole number is that number), offset (frames from start to the first downbeat, "
+                     + "0.01 % of a whole number is that number), offset (frames from start to the first downbeat, "
                      + "under one bar), beatsPerBar; notes say what to doubt and which existing segments an apply "
                      + "would cut. Show the author, then beatgrid_apply.")]
         public Task<CallToolResult> BeatgridPropose(
             [Description(ResourceDoc)] int? resource = null,
             [Description("Where the grid starts, a frame or seconds; the track start when absent.")]
             JsonElement? from = null,
-            [Description("Its last frame; the end of the track or level when absent.")] JsonElement? to = null,
+            [Description("Its end; the end of the track or level when absent. " + ToDoc)] JsonElement? to = null,
             CancellationToken token = default)
             => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.BeatgridPropose, new BeatgridProposeRequest
             {

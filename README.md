@@ -131,7 +131,7 @@ Class per area under `Tools/`; the name is the bridge method with `_` for `.`.
 | | `events_get` | markers, beat segments, checkpoints, audio tracks |
 | | `resources_list` | textures, fonts, audios, prefabs, themes, effects |
 | | `shapes_find` | shapes by form, sector, thickness or name |
-| `EditTools` | `edit_batch` | the one write tool: ops in one undo step, verb vocabulary in its description |
+| `EditTools` | `edit_batch` | the one write tool: ops in one undo step, verb vocabulary in its description; `opsFile` reads a big batch from a local file, so it never passes through the conversation |
 | `HistoryTools` | `history_get` | the undo history, AI batches captioned |
 | | `history_undo` / `history_redo` | step the history |
 | | `changes_since` | what changed after a revision, and who |
