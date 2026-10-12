@@ -328,7 +328,7 @@ namespace BH.MCP.Tests
             var tools = new HashSet<string>(ToolMethods().Select(m => m.GetCustomAttribute<McpServerToolAttribute>().Name));
             var prompts = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                 .Where(m => m.GetCustomAttribute<McpServerPromptAttribute>() != null).ToArray();
-            Assert.AreEqual(3, prompts.Length);
+            Assert.AreEqual(4, prompts.Length);
 
             foreach (var prompt in prompts)
             {

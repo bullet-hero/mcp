@@ -160,7 +160,8 @@ Class per area under `Tools/`; the name is the bridge method with `_` for `.`.
 | `ContextTools` | `context_list` / `context_read` / `context_write` | the level's `ai/` folder: memory across sessions (a file, not an undo step) |
 | | `guide_get` | a topic of the guide rendered from the public docs |
 
-Prompts (`Prompts/WorkflowPrompts.cs`): `build_level_from_music`, `review_section`, `continue_level` -
+Prompts (`Prompts/WorkflowPrompts.cs`): `build_level_from_music`, `review_section`, `continue_level`,
+`recreate_picture` -
 short workflows over the tools above.
 
 A list comes back as a header line (`total=.. offset=.. revision=.. scope=.. next=..`) and its lines;

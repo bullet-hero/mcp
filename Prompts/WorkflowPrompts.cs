@@ -51,6 +51,32 @@ namespace BH.MCP.Prompts
                + "4. Ask the author whether the plan still holds, then continue it batch by batch.\n"
                + "5. Before stopping, update the plan and open questions with context_write.";
 
+        [McpServerPrompt(Name = "recreate_picture")]
+        [Description("Rebuild a reference picture as level shapes, compared against the picture itself.")]
+        public string RecreatePicture(
+            [Description("Absolute path of the reference image, with forward slashes: a prompt argument turns "
+                         + "a backslash pair such as \\r into a control character.")] string path,
+            [Description("What should move, if anything: the motion the author wants. Optional.")]
+            string motion = null)
+            => $"Rebuild the picture at {path} as shapes of the open level.\n"
+               + (string.IsNullOrWhiteSpace(motion) ? "" : "Motion the author wants: " + motion.Trim() + "\n")
+               + "1. resource_import it as a texture; edit_batch a quad of its exact extent on a top layer with "
+               + "that texture, named as the reference. Compare by view_capture with it on and off (active: "
+               + "true/false, never an alpha-0 colour); a region capture zooms in. Keep it, inactive.\n"
+               + "2. Catalog shapes first (shapes_find): a Circle, a Square stretched by size and turned by "
+               + "rotation for every bar, line and neck. A custom polygon only where none fits, with its real "
+               + "corners only and straight edges between; never per-pixel regions. Detail is the price of "
+               + "clean edges: a ragged outline or a seam is worse than a lost notch.\n"
+               + "3. Light and shade lie ON TOP of one base silhouette, clipped to it so they share its edge; "
+               + "never two regions edge to edge, the seam shows. A part another covers runs on under it, so "
+               + "the two touch without a gap when either moves.\n"
+               + "4. What the picture hides under a moving item is guessed: bridge that stretch of an outline "
+               + "straight, or it shows as a bump once the item moves away.\n"
+               + "5. Layers are effective: each create layer is the sum up the parent chain. Group what moves "
+               + "together; give every moving part its own group.\n"
+               + "6. Fill the 16:9 frame: the background reaches every edge. Check the result as a whole and "
+               + "zoomed, part by part, against the reference before calling it done; level_save.";
+
         private static string Brief(string brief)
             => string.IsNullOrWhiteSpace(brief) ? "" : "The author's brief: " + brief.Trim() + "\n";
     }
