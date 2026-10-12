@@ -78,8 +78,10 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "command_run", ReadOnly = false, Destructive = false, Idempotent = false)]
         [Description("Runs one allowed editor command (see command_list), e.g. cmd_editor_duplicate on the "
-                     + "selection set with selection_set. changed is false when it ran but edited nothing. Refused: forbidden "
-                     + "(excluded), not_found, refused (unavailable now), busy, stale, user_busy.")]
+                     + "selection set with selection_set. changed is false when it ran but edited nothing; created "
+                     + "lists the ids it made, warnings what will not play (a copy outside its parent's span). "
+                     + "Refused: forbidden (excluded), not_found, refused (unavailable now), busy, stale, "
+                     + "user_busy.")]
         public Task<CallToolResult> CommandRun(
             [Description("Revision from your last read; a mismatch is stale.")] int expectedRevision,
             [Description("Command id from command_list.")] string id,

@@ -30,8 +30,8 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "history_undo", ReadOnly = false, Destructive = false, Idempotent = false)]
         [Description("Undoes the last history step, whoever made it: the author's Ctrl+Z. One AI batch is one "
-                     + "step. applied is false when there is nothing to undo. Refused while the editor is "
-                     + "locked or the author is dragging.")]
+                     + "step. applied is false when there is nothing to undo; step names what was undone, as "
+                     + "history_get words it. Refused while the editor is locked or the author is dragging.")]
         public Task<CallToolResult> HistoryUndo(
             [Description("Revision of your last read; a mismatch is stale. Absent to undo regardless.")]
             int? expectedRevision = null,
@@ -41,7 +41,7 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "history_redo", ReadOnly = false, Destructive = false, Idempotent = false)]
         [Description("Redoes the last undone step (the author's Ctrl+Y). applied is false when there is nothing "
-                     + "to redo. Same refusals as history_undo.")]
+                     + "to redo; step names what was redone. Same refusals as history_undo.")]
         public Task<CallToolResult> HistoryRedo(
             [Description("Revision of your last read; a mismatch is stale. Absent to redo regardless.")]
             int? expectedRevision = null,

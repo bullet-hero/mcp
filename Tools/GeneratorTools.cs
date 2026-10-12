@@ -17,7 +17,8 @@ namespace BH.MCP.Tools
     [McpServerToolType]
     public sealed class GeneratorTools
     {
-        private const string TimeDoc = "Global frame from 1 (120 or \"f:120\") or seconds (\"s:12.5\").";
+        private const string TimeDoc = "Global frame from 1 (120 or \"f:120\"), seconds (\"s:12.5\"), a marker "
+            + "(\"marker:drop\") or, with a beat grid, \"bar:17\".";
 
         private readonly BridgeClient _bridge;
 

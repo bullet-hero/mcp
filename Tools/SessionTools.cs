@@ -39,14 +39,18 @@ namespace BH.MCP.Tools
                      + "need this; with several, instance_select picks which one every later call goes to.")]
         public CallToolResult InstanceList()
         {
-            var defaultToken = DefaultToken();
+            var defaultEndpoint = DefaultEndpoint();
+            var defaultToken = defaultEndpoint?.Token;
+
+            // No pid chosen means the calls follow the default game.
+            var targetPid = _bridge.SelectedPid ?? defaultEndpoint?.Pid;
             var array = new JArray(LiveInstances().Select(e => new JObject
             {
                 ["pid"] = e.Pid,
                 ["port"] = e.Port,
                 ["gv"] = e.Gv,
                 ["isDefault"] = e.Token == defaultToken,
-                ["isSelected"] = _bridge.SelectedPid == e.Pid,
+                ["isSelected"] = targetPid == e.Pid,
             }));
 
             return BridgeTool.Text(new JObject { ["instances"] = array }.ToString(Formatting.None), false);
@@ -77,7 +81,7 @@ namespace BH.MCP.Tools
         private AgentEndpoint[] LiveInstances()
             => AgentEndpoint.ListInstances(_bridge.EndpointPath).Where(e => GameLauncher.IsAlive(e.Pid)).ToArray();
 
-        private string DefaultToken()
-            => AgentEndpoint.TryRead(_bridge.EndpointPath, out var endpoint, out _) ? endpoint.Token : null;
+        private AgentEndpoint DefaultEndpoint()
+            => AgentEndpoint.TryRead(_bridge.EndpointPath, out var endpoint, out _) ? endpoint : null;
     }
 }

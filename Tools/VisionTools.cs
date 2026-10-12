@@ -19,7 +19,8 @@ namespace BH.MCP.Tools
     [McpServerToolType]
     public sealed class VisionTools
     {
-        private const string FrameDoc = "Global frame from 1 (120 or \"f:120\") or seconds (\"s:12.5\").";
+        private const string FrameDoc = "Global frame from 1 (120 or \"f:120\"), seconds (\"s:12.5\"), a marker "
+            + "(\"marker:drop\") or, with a beat grid, \"bar:17\".";
 
         private readonly BridgeClient _bridge;
 
@@ -80,7 +81,7 @@ namespace BH.MCP.Tools
         [McpServerTool(Name = "object_explain", ReadOnly = true)]
         [Description("Why an object is or is not drawn at a frame: the first reason that applies, in order "
                      + "outside_span, resolved_away (a parent's span clips it), orphan, not_in_frame or "
-                     + "capacity_overflow, not_drawable (a rect group), zero_size, inactive, no_mesh, "
+                     + "capacity_overflow, not_drawable (a rect group), zero_size, inactive, no_mesh, no_effect, "
                      + "transparent, off_camera, capacity_overflow, else drawn; detail gives the numbers.")]
         public Task<CallToolResult> ObjectExplain(
             [Description("Object id.")] int id,

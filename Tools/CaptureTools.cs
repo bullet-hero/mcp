@@ -17,7 +17,8 @@ namespace BH.MCP.Tools
     [McpServerToolType]
     public sealed class CaptureTools
     {
-        private const string FrameDoc = "Global frame from 1 (120 or \"f:120\") or seconds (\"s:12.5\").";
+        private const string FrameDoc = "Global frame from 1 (120 or \"f:120\"), seconds (\"s:12.5\"), a marker "
+            + "(\"marker:drop\") or, with a beat grid, \"bar:17\".";
         private const string Refusals = "Refused: user_busy (the author is working, or the editor is playing: "
                                         + "playback_set pauses it), preempted "
                                         + "(the author touched the editor mid-capture; the playhead stays where "

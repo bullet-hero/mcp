@@ -17,7 +17,8 @@ namespace BH.MCP.Tools
     [McpServerToolType]
     public sealed class ReadTools
     {
-        private const string TimeDoc = "Global frame from 1 (120 or \"f:120\") or seconds (\"s:12.5\").";
+        private const string TimeDoc = "Global frame from 1 (120 or \"f:120\"), seconds (\"s:12.5\"), a marker "
+            + "(\"marker:drop\") or, with a beat grid, \"bar:17\".";
         private const string PageDoc = "Pages: header total/offset/next, lines after it. ";
 
         private readonly BridgeClient _bridge;
@@ -26,9 +27,10 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "level_outline", ReadOnly = true)]
         [Description("The object hierarchy, one indented line per object: "
-                     + "#12 Shape \"boss-ring\" L5(+2) f120+60 shape:Circle_S2_T2 kids:3 "
+                     + "#12 Shape \"boss-ring\" L5(+2) f120+60 shape:Circle_S2_T2 collider:Circle kids:3 "
                      + "(#id, type, name, L = EFFECTIVE layer with (+n) own layer when different, f = global "
-                     + "start frame + duration in frames, kids = children). " + PageDoc
+                     + "start frame + duration in frames, collider = what hurts the player, absent on "
+                     + "decoration, kids = children). " + PageDoc
                      + "Start with depth 1-2, then descend with parent.")]
         public Task<CallToolResult> LevelOutline(
             [Description("Object id to list under; absent for the roots.")] int? parent = null,
