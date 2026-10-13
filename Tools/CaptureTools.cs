@@ -40,12 +40,15 @@ namespace BH.MCP.Tools
             [Description("Longest side in pixels, capped by the game's image limit.")] int? size = null,
             [Description("World rect {x, y, width, height} to frame, x/y its lower-left corner; absent for the "
                          + "level camera's view. The image takes its aspect.")] JsonElement? region = null,
+            [Description("Id of a shape that carries a reference picture (an imported texture on a quad, kept "
+                         + "inactive): the result scores the capture against it (compareMean, compareOver, "
+                         + "comparePixels) and tints the pixels that differ magenta.")] int? compare = null,
             CancellationToken token = default)
             => BridgeTool.ForwardImageAsync(_bridge, AgentProtocol.Methods.ViewCapture,
                 new ViewCaptureRequest
                 {
                     Frame = BridgeTool.Time(frame), Size = size,
-                    Region = BridgeTool.Time(region)?.ToObject<AgentRegion>(),
+                    Region = BridgeTool.Time(region)?.ToObject<AgentRegion>(), Compare = compare,
                 }, token);
 
         [McpServerTool(Name = "view_filmstrip", ReadOnly = false, Destructive = false, Idempotent = true)]

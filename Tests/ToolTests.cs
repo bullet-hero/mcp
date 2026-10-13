@@ -348,6 +348,29 @@ namespace BH.MCP.Tests
         [Author(Metadata.Author.Vertoker)]
         [Category(Metadata.Category.Self)]
         [Category(Metadata.Category.Easy)]
+        public async Task TheEditGuide_IsServedWithoutTheGame_AndNamesOnlyToolsThatExist()
+        {
+            var tools = new HashSet<string>(ToolMethods().Select(m => m.GetCustomAttribute<McpServerToolAttribute>().Name))
+            {
+                "prefab_pack", "prefab_flatten", // edit_batch ops, not tools
+            };
+            var text = BH.MCP.Tools.EditGuide.Text;
+            StringAssert.StartsWith("# Guide: edit", text);
+            Assert.IsFalse(text.Contains('—') || text.Contains('–') || text.Contains('\r'));
+
+            foreach (System.Text.RegularExpressions.Match word in
+                     System.Text.RegularExpressions.Regex.Matches(text, @"\b[a-z]+_[a-z_]+\b"))
+                Assert.IsTrue(tools.Contains(word.Value), "the edit guide names " + word.Value);
+
+            var result = await new BH.MCP.Tools.ContextTools(null).GuideGet(BH.MCP.Tools.EditGuide.Topic);
+            Assert.IsFalse(result.IsError == true);
+            StringAssert.Contains("## Tracks and values", ((TextContentBlock)result.Content[0]).Text);
+        }
+
+        [Test]
+        [Author(Metadata.Author.Vertoker)]
+        [Category(Metadata.Category.Self)]
+        [Category(Metadata.Category.Easy)]
         public void NoDescriptionHoldsAnEmOrEnDash()
         {
             foreach (var method in ToolMethods())

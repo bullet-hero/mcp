@@ -61,12 +61,15 @@ namespace BH.MCP.Tools
 
         [McpServerTool(Name = "guide_get", ReadOnly = true)]
         [Description("A topic of the Bullet Hero guide, rendered from the public docs: index (the list), "
-                     + "coordinates, time, randomness, prefabs, shapes, avatar, generators, design, context (the "
-                     + "CONTEXT.md skeleton), mcp.")]
+                     + "coordinates, time, randomness, prefabs, shapes, avatar, generators, design, pictures, "
+                     + "context (the CONTEXT.md skeleton), mcp; and edit, the edit_batch reference, which the "
+                     + "server answers itself (no game needed).")]
         public Task<CallToolResult> GuideGet(
             [Description("Topic name; absent for index.")] string topic = null,
             CancellationToken token = default)
-            => BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.GuideGet,
-                new GuideGetRequest { Topic = topic }, token);
+            => topic == EditGuide.Topic
+                ? Task.FromResult(BridgeTool.Text(EditGuide.Text, false))
+                : BridgeTool.ForwardAsync(_bridge, AgentProtocol.Methods.GuideGet,
+                    new GuideGetRequest { Topic = topic }, token);
     }
 }

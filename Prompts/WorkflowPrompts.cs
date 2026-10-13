@@ -21,7 +21,8 @@ namespace BH.MCP.Prompts
                + "3. music_table by bar and music_strip: propose a section plan (bars, energy, what happens). "
                + "Ask the author before building; record the agreed plan with context_write.\n"
                + "4. Per section: one edit_batch for the skeleton (groups, spans on bar: addresses), then "
-               + "batches that fill it. Caption every batch with the section name.\n"
+               + "batches that fill it. Caption every batch with the section name. Every pattern used more "
+               + "than once is a prefab: pack it once (an edit_batch op), place copies, key only what differs.\n"
                + "5. After each section: view_schematic at a few bars, frame_stats over it, music_check; "
                + "view_filmstrip for the real look. Fix what reads badly.\n"
                + "6. Ask the author to play it (music_play) and record their remarks with context_write.";
@@ -54,15 +55,15 @@ namespace BH.MCP.Prompts
         [McpServerPrompt(Name = "recreate_picture")]
         [Description("Rebuild a reference picture as level shapes, compared against the picture itself.")]
         public string RecreatePicture(
-            [Description("Absolute path of the reference image, with forward slashes: a prompt argument turns "
-                         + "a backslash pair such as \\r into a control character.")] string path,
+            [Description("Absolute path of the reference image on disk.")] string path,
             [Description("What should move, if anything: the motion the author wants. Optional.")]
             string motion = null)
             => $"Rebuild the picture at {path} as shapes of the open level.\n"
                + (string.IsNullOrWhiteSpace(motion) ? "" : "Motion the author wants: " + motion.Trim() + "\n")
                + "1. resource_import it as a texture; edit_batch a quad of its exact extent on a top layer with "
-               + "that texture, named as the reference. Compare by view_capture with it on and off (active: "
-               + "true/false, never an alpha-0 colour); a region capture zooms in. Keep it, inactive.\n"
+               + "that texture, named as the reference, and keep it inactive (active false, never an alpha-0 "
+               + "colour). view_capture with compare set to its id scores the frame against it and shows "
+               + "where they differ; a region capture zooms in.\n"
                + "2. Catalog shapes first (shapes_find): a Circle, a Square stretched by size and turned by "
                + "rotation for every bar, line and neck. A custom polygon only where none fits, with its real "
                + "corners only and straight edges between; never per-pixel regions. Detail is the price of "
@@ -72,8 +73,10 @@ namespace BH.MCP.Prompts
                + "the two touch without a gap when either moves.\n"
                + "4. What the picture hides under a moving item is guessed: bridge that stretch of an outline "
                + "straight, or it shows as a bump once the item moves away.\n"
-               + "5. Layers are effective: each create layer is the sum up the parent chain. Group what moves "
-               + "together; give every moving part its own group.\n"
+               + "5. Layers are effective: each create layer is the sum up the parent chain, and two objects "
+               + "never share one while both play. Group what moves together; every moving part its own group. "
+               + "A repeated element (an eye, a window, a petal) is a prefab: pack one, place the rest, key "
+               + "position, scale and colours per copy as overrides.\n"
                + "6. Fill the 16:9 frame: the background reaches every edge. Check the result as a whole and "
                + "zoomed, part by part, against the reference before calling it done; level_save.";
 

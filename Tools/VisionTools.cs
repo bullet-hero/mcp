@@ -86,7 +86,8 @@ namespace BH.MCP.Tools
                      + "outside_span, resolved_away (a parent's span clips it), orphan, not_in_frame or "
                      + "capacity_overflow (the frame's object slots ran out), not_drawable (a rect group), "
                      + "zero_size, inactive, no_mesh, no_effect, transparent, off_camera, capacity_overflow (its "
-                     + "shape slots ran out), else drawn; detail gives the numbers.")]
+                     + "shape slots ran out), covered (an opaque shape that fills its rect draws over all of it), "
+                     + "else drawn; detail gives the numbers.")]
         public Task<CallToolResult> ObjectExplain(
             [Description("Object id.")] int id,
             [Description(FrameDoc)] JsonElement frame,

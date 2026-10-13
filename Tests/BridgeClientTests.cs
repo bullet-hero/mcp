@@ -282,7 +282,7 @@ namespace BH.MCP.Tests
         {
             Assert.Less(ServerInstructions.Text.Length, ServerInstructions.MaxLength);
             StringAssert.StartsWith("You work in the Bullet Hero game", ServerInstructions.Text);
-            StringAssert.EndsWith("generators, design.", ServerInstructions.Text);
+            StringAssert.EndsWith("generators, design, pictures, edit.", ServerInstructions.Text);
             Assert.IsFalse(ServerInstructions.Text.Contains('\r'));
         }
     }
